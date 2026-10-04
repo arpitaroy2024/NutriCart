@@ -1,6 +1,6 @@
 # NutriCart — Implementation Plan
 
-Written 2026-10-04. Status: **approved. Phases 0, 1 and 2 complete; Phase 3 not started.** Phase 2 changed some storage details from sections 6 and 7 below; see `phase_2_local_storage.md` section 13.
+Written 2026-10-04. Status: **approved. Phases 0 to 3 complete; Phase 4 not started.** Onboarding panes 2 and 3 use provisional copy that still needs approval; see `phase_3_entry_auth.md` section 4. Phase 2 changed some storage details from sections 6 and 7 below; see `phase_2_local_storage.md` section 13.
 
 Sources:
 

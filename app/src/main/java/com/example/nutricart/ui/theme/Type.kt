@@ -8,17 +8,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-// Set of Material typography styles to start with
-val Typography = Typography(
-    bodyLarge = TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Normal,
-        fontSize = 16.sp,
-        lineHeight = 24.sp,
-        letterSpacing = 0.5.sp
-    )
-)
-
 // Type roles from Screen Details, slide F-02
 @Immutable
 data class NutriCartTypography(
@@ -54,3 +43,15 @@ val NutriCartType = NutriCartTypography(
 )
 
 val LocalNutriCartTypography = staticCompositionLocalOf { NutriCartType }
+
+// Material components that are not given a style explicitly pick up the matching role
+val Typography = Typography(
+    headlineLarge = NutriCartType.display,
+    headlineMedium = NutriCartType.headline,
+    titleLarge = NutriCartType.titleLarge,
+    titleMedium = NutriCartType.title,
+    bodyLarge = NutriCartType.body,
+    bodyMedium = NutriCartType.caption,
+    labelMedium = NutriCartType.label,
+    labelSmall = NutriCartType.micro
+)

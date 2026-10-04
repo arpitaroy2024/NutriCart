@@ -4,11 +4,6 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
-// Brand colors used by the current Splash and Login screens
-val DarkGreen = Color(0xFF2E4A1F)
-val MidGreen = Color(0xFF4C7A2E)
-val LightGreen = Color(0xFF6FA83D)
-
 // Design tokens from Screen Details, slide F-01. Hex values live only in this file.
 @Immutable
 data class NutriCartColors(

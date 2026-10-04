@@ -9,4 +9,57 @@
     <string name="cd_back">Back</string>
     <string name="cd_decrease">Decrease</string>
     <string name="cd_increase">Increase</string>
+
+    <string name="action_retry">Retry</string>
+
+    <!-- Splash (SCR-01) -->
+    <string name="splash_app_name">NutriCart AI</string>
+    <string name="splash_tagline">Smarter groceries on your budget</string>
+    <string name="splash_preparing">Preparing your plan</string>
+
+    <!-- Onboarding (SCR-02). Pane 1 is from the PDF. -->
+    <string name="onboarding_skip">Skip</string>
+    <string name="onboarding_get_started">Get started</string>
+    <string name="onboarding_footnote">Takes about a minute</string>
+    <string name="onboarding_storage_error">Couldn\'t read your saved data.</string>
+    <string name="onboarding_1_heading">Eat well without overspending.</string>
+    <string name="onboarding_1_description">Set a monthly budget and NutriCart builds a grocery list that fits it — checked against your allergies.</string>
+    <string name="onboarding_1_chip_left">Tk</string>
+    <string name="onboarding_1_chip_right">kcal</string>
+    <!-- PROVISIONAL: panes 2 and 3 are not specified in the PDFs and need product-owner approval. -->
+    <string name="onboarding_2_heading">Balanced for your household.</string>
+    <string name="onboarding_2_description">NutriCart scores each list against what your household needs and points out the biggest nutrition gap.</string>
+    <string name="onboarding_2_chip_left">g</string>
+    <string name="onboarding_2_chip_right">mg</string>
+    <string name="onboarding_3_heading">Flagged, never hidden.</string>
+    <string name="onboarding_3_description">Items that conflict with your allergies or health condition are flagged with safer swaps. The choice stays yours.</string>
+    <string name="onboarding_3_chip_left">OK</string>
+    <string name="onboarding_3_chip_right">!</string>
+
+    <!-- Login and Create account (not in the PDFs) -->
+    <string name="login_title">Welcome Back</string>
+    <string name="login_subtitle">Login to continue</string>
+    <string name="login_button">Login</string>
+    <string name="login_create_account_link">New here? Create account</string>
+    <string name="register_title">Create account</string>
+    <string name="register_subtitle">Your account stays on this device</string>
+    <string name="register_button">Create account</string>
+    <string name="register_login_link">Already have an account? Login</string>
+    <string name="field_name">Name</string>
+    <string name="field_email">Email</string>
+    <string name="field_password">Password</string>
+    <string name="error_name_blank">Enter your name</string>
+    <string name="error_email_invalid">Enter a valid email address</string>
+    <string name="error_email_taken">An account with this email already exists</string>
+    <string name="error_password_short">Use at least %1$d characters</string>
+    <string name="error_login_failed">Email or password is incorrect</string>
+    <string name="error_unexpected">Something went wrong. Please try again.</string>
+
+    <!-- Temporary placeholders for Phase 4 destinations -->
+    <string name="placeholder_profile_setup">Profile setup</string>
+    <string name="placeholder_home">Home</string>
+    <string name="placeholder_title">%1$s is not built yet</string>
+    <string name="placeholder_message">This is a temporary placeholder. The real screen belongs to Phase 4. You are signed in and the app has not frozen.</string>
+    <string name="placeholder_back_to_login">Back to Login (Testing)</string>
+    <string name="placeholder_note">Testing only. This does not log you out.</string>
 </resources>
