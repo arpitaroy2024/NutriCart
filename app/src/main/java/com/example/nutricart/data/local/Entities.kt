@@ -39,7 +39,11 @@ data class ProfileEntity(
     val region: String,
     val householdSize: Int,
     val allergies: Set<Allergen>,
-    val condition: HealthCondition
+    // Allergies the list does not cover, as typed by the user, in the order added
+    val customAllergies: List<String> = emptyList(),
+    // Both empty when the user has no condition
+    val conditions: Set<HealthCondition>,
+    val customConditions: List<String> = emptyList()
 )
 
 @Entity(

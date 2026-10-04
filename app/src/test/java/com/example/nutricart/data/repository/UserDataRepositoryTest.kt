@@ -43,27 +43,27 @@ class UserDataRepositoryTest {
 
     @Test
     fun profile_savingAgainOverwritesTheSingleRow() = runBlocking<Unit> {
-        env.profiles.save("Rangpur Division", 4, setOf(Allergen.Peanuts), HealthCondition.Diabetes)
-        env.profiles.save("Dhaka Division", 6, emptySet(), HealthCondition.None)
+        env.profiles.save("Rangpur Division", 4, setOf(Allergen.Peanuts), setOf(HealthCondition.Diabetes))
+        env.profiles.save("Dhaka Division", 6, emptySet(), emptySet())
 
         val profile = env.profiles.observe().first()!!
         assertTrue(env.profiles.exists())
         assertEquals("Dhaka Division", profile.region)
         assertEquals(6, profile.householdSize)
         assertTrue(profile.allergies.isEmpty())
-        assertEquals(HealthCondition.None, profile.condition)
+        assertTrue(profile.conditions.isEmpty())
     }
 
     @Test
     fun profile_rejectsABlankRegionAndOutOfRangeHousehold() = runBlocking<Unit> {
         assertThrows(IllegalArgumentException::class.java) {
-            runBlocking { env.profiles.save(" ", 4, emptySet(), HealthCondition.None) }
+            runBlocking { env.profiles.save(" ", 4, emptySet(), emptySet()) }
         }
         assertThrows(IllegalArgumentException::class.java) {
-            runBlocking { env.profiles.save("Rangpur Division", 0, emptySet(), HealthCondition.None) }
+            runBlocking { env.profiles.save("Rangpur Division", 0, emptySet(), emptySet()) }
         }
         assertThrows(IllegalArgumentException::class.java) {
-            runBlocking { env.profiles.save("Rangpur Division", 13, emptySet(), HealthCondition.None) }
+            runBlocking { env.profiles.save("Rangpur Division", 21, emptySet(), emptySet()) }
         }
         assertFalse(env.profiles.exists())
     }

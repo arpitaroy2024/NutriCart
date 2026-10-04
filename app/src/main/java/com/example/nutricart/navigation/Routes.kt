@@ -21,11 +21,12 @@ object Routes {
 
     const val ARG_STORAGE_ERROR = "storageError"
     const val ARG_MODE = "mode"
+    const val MODE_EDIT = "edit"
 
     // storageError asks the welcome screen to offer a retry after a failed read on the splash
     fun welcome(storageError: Boolean = false) = "welcome?storageError=$storageError"
 
-    fun profileSetup() = "profile/setup"
+    fun profileSetup(edit: Boolean = false) = if (edit) "profile/setup?mode=$MODE_EDIT" else "profile/setup"
 
     fun forEntry(destination: EntryDestination, storageError: Boolean = false) = when (destination) {
         EntryDestination.Welcome -> welcome(storageError)

@@ -51,6 +51,7 @@ object Sizes {
     val radio = 22.dp
     val chip = 32.dp
     val filterChip = 36.dp
+    val selectChip = 40.dp
     val rail = 8.dp
     val bottomNav = 72.dp
     val topBar = 56.dp

@@ -55,11 +55,102 @@
     <string name="error_login_failed">Email or password is incorrect</string>
     <string name="error_unexpected">Something went wrong. Please try again.</string>
 
-    <!-- Temporary placeholders for Phase 4 destinations -->
-    <string name="placeholder_profile_setup">Profile setup</string>
-    <string name="placeholder_home">Home</string>
-    <string name="placeholder_title">%1$s is not built yet</string>
-    <string name="placeholder_message">This is a temporary placeholder. The real screen belongs to Phase 4. You are signed in and the app has not frozen.</string>
-    <string name="placeholder_back_to_login">Back to Login (Testing)</string>
-    <string name="placeholder_note">Testing only. This does not log you out.</string>
+    <string name="action_log_out">Log out</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_discard">Discard</string>
+    <string name="action_keep_editing">Keep editing</string>
+
+    <!-- Profile values -->
+    <string name="label_region">Region</string>
+    <string name="label_household">Household size</string>
+    <string name="label_allergies">Allergies</string>
+    <string name="label_allergies_optional">Allergies · optional</string>
+    <string name="label_conditions">Health conditions</string>
+    <string name="allergen_dairy">Milk / Dairy</string>
+    <string name="allergen_eggs">Egg</string>
+    <string name="allergen_fish">Fish</string>
+    <string name="allergen_shellfish">Shellfish</string>
+    <string name="allergen_poultry">Chicken / Poultry</string>
+    <string name="allergen_beef">Beef</string>
+    <string name="allergen_soy">Soy</string>
+    <string name="allergen_peanuts">Peanut</string>
+    <string name="allergen_tree_nuts">Tree nuts</string>
+    <string name="allergen_gluten">Wheat / Gluten</string>
+    <string name="allergen_sesame">Sesame</string>
+    <string name="condition_none">None of these</string>
+    <string name="conditions_none">None</string>
+    <string name="condition_diabetes">Diabetes</string>
+    <string name="condition_prediabetes">Prediabetes</string>
+    <string name="condition_hypertension">High blood pressure</string>
+    <string name="condition_high_cholesterol">High cholesterol</string>
+    <string name="condition_heart_disease">Heart disease</string>
+    <string name="condition_kidney_disease">Kidney disease</string>
+    <string name="condition_liver_disease">Liver disease</string>
+    <string name="condition_pcos">PCOS</string>
+    <string name="condition_thyroid">Thyroid condition</string>
+    <string name="condition_anemia">Anemia</string>
+    <string name="condition_celiac">Celiac disease</string>
+    <plurals name="household_unit">
+        <item quantity="one">person</item>
+        <item quantity="other">people</item>
+    </plurals>
+    <plurals name="household_count">
+        <item quantity="one">%1$d person</item>
+        <item quantity="other">%1$d people</item>
+    </plurals>
+
+    <!-- Profile setup (SCR-03) -->
+    <string name="profile_setup_title">Set up your profile</string>
+    <string name="profile_edit_title">Edit profile</string>
+    <string name="profile_signed_in_as">Signed in as %1$s</string>
+    <string name="region_placeholder">Choose your division</string>
+    <string name="allergies_helper">Select all that apply. Leave empty if none.</string>
+    <string name="condition_helper">Select all that apply, or None of these.</string>
+    <string name="custom_allergies_label">Custom allergies</string>
+    <string name="custom_conditions_label">Custom health conditions</string>
+    <string name="custom_allergy_placeholder">Type an allergy</string>
+    <string name="custom_condition_placeholder">Type a condition</string>
+    <string name="action_add">Add</string>
+    <string name="error_custom_duplicate">Already added</string>
+    <string name="custom_limit_reached">You can add up to %1$d</string>
+    <string name="cd_remove">Remove %1$s</string>
+    <string name="save_profile">Save profile</string>
+    <string name="save_hint_region">Choose a region to continue</string>
+    <string name="save_hint_condition">Choose at least one health condition, or None of these</string>
+    <string name="save_hint_both">Choose a region and your health conditions to continue</string>
+    <string name="save_hint_pending">Tap Add to keep “%1$s”, or clear the field</string>
+    <string name="error_profile_save">Couldn\'t save your profile. Please try again.</string>
+    <string name="discard_title">Discard changes?</string>
+    <string name="discard_message">Your changes have not been saved.</string>
+
+    <!-- Home (SCR-04) -->
+    <string name="greeting_morning">Good morning</string>
+    <string name="greeting_afternoon">Good afternoon</string>
+    <string name="greeting_evening">Good evening</string>
+    <string name="cd_open_profile">Open profile</string>
+    <string name="label_monthly_budget">Monthly budget</string>
+    <string name="home_budget_context">For %1$s · %2$s</string>
+    <string name="budget_prefix">Tk</string>
+    <string name="budget_placeholder">Amount</string>
+    <string name="error_budget_min">Enter at least Tk %1$s</string>
+    <string name="error_budget_max">Enter no more than Tk %1$s</string>
+    <string name="home_generate">Generate grocery list</string>
+    <string name="home_generate_note">Not available yet: list generation is built in Phase 5.</string>
+    <string name="home_generate_unavailable">List generation isn\'t available yet. It is built in Phase 5.</string>
+    <string name="home_empty_title">No grocery list yet</string>
+    <string name="home_empty_message">Your list, nutrition score and alerts will appear here once you can generate a list.</string>
+
+    <!-- Profile (SCR-09) -->
+    <string name="profile_member_since">Member since %1$s</string>
+    <string name="allergies_none">None recorded</string>
+    <string name="edit_profile">Edit profile</string>
+    <string name="logout_title">Log out?</string>
+    <string name="logout_message">You\'ll be logged out. Your account, profile and grocery history stay on this device.</string>
+
+    <!-- Tabs whose features are built in later phases -->
+    <string name="upcoming_title">Coming soon</string>
+    <string name="upcoming_list_heading">Grocery list</string>
+    <string name="upcoming_list_message">Your generated grocery list will appear here. This is built in Phase 5.</string>
+    <string name="upcoming_nutrition_heading">Nutrition</string>
+    <string name="upcoming_nutrition_message">The nutrition analysis of your list will appear here. This is built in Phase 7.</string>
 </resources>

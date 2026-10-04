@@ -1,26 +1,44 @@
 package com.example.nutricart.navigation
 
+import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.nutricart.R
+import com.example.nutricart.ui.components.BottomNavTab
+import com.example.nutricart.ui.components.NutriBottomNav
 import com.example.nutricart.ui.screens.auth.CreateAccountScreen
 import com.example.nutricart.ui.screens.auth.LoginScreen
+import com.example.nutricart.ui.screens.home.HomeScreen
 import com.example.nutricart.ui.screens.onboarding.OnboardingScreen
-import com.example.nutricart.ui.screens.placeholder.PlaceholderScreen
+import com.example.nutricart.ui.screens.profile.ProfileScreen
+import com.example.nutricart.ui.screens.profilesetup.ProfileSetupScreen
 import com.example.nutricart.ui.screens.splash.SplashScreen
+import com.example.nutricart.ui.screens.upcoming.UpcomingScreen
+import com.example.nutricart.ui.theme.NutriCartTheme
 
 private const val FADE_MS = 200
 
 @Composable
 fun NutriCartNavHost(navController: NavHostController = rememberNavController()) {
+    val activity = LocalActivity.current
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentTab = ShellTabs.tabFor(backStackEntry?.destination?.route)
+
     // Leaving login or create account after signing in removes both from the back stack
     val onAuthenticated: (EntryDestination) -> Unit = { destination ->
         navController.navigate(Routes.forEntry(destination)) {
@@ -28,85 +46,142 @@ fun NutriCartNavHost(navController: NavHostController = rememberNavController())
         }
     }
 
-    // Temporary, for testing the entry flow from the Phase 4 placeholders. The session is kept.
-    val backToLoginForTesting: () -> Unit = {
+    // After logging out nothing signed-in is left underneath Login
+    val onLoggedOut: () -> Unit = {
         navController.navigate(Routes.LOGIN) {
             popUpTo(navController.graph.id) { inclusive = true }
         }
     }
 
-    NavHost(
-        navController = navController,
-        startDestination = Routes.SPLASH,
-        enterTransition = { fadeIn(tween(FADE_MS)) },
-        exitTransition = { fadeOut(tween(FADE_MS)) }
-    ) {
-        composable(Routes.SPLASH) {
-            SplashScreen(
-                onResolved = { result ->
-                    navController.navigate(Routes.forEntry(result.destination, result.storageError)) {
-                        popUpTo(Routes.SPLASH) { inclusive = true }
-                    }
-                }
-            )
+    // Tabs are siblings: they never stack on each other, each keeps its own state,
+    // and back from any of them returns to Home
+    val openTab: (BottomNavTab) -> Unit = { tab ->
+        navController.navigate(ShellTabs.routeFor(tab)) {
+            popUpTo(Routes.HOME) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
         }
-        composable(
-            route = Routes.WELCOME,
-            arguments = listOf(
-                navArgument(Routes.ARG_STORAGE_ERROR) {
-                    type = NavType.BoolType
-                    defaultValue = false
-                }
-            )
-        ) { entry ->
-            OnboardingScreen(
-                storageError = entry.arguments?.getBoolean(Routes.ARG_STORAGE_ERROR) == true,
-                onFinished = {
-                    navController.navigate(Routes.LOGIN) {
-                        popUpTo(Routes.WELCOME) { inclusive = true }
-                    }
-                },
-                onRetry = {
-                    navController.navigate(Routes.SPLASH) {
-                        popUpTo(Routes.WELCOME) { inclusive = true }
-                    }
-                }
-            )
-        }
-        composable(Routes.LOGIN) {
-            LoginScreen(
-                onAuthenticated = onAuthenticated,
-                onCreateAccount = { navController.navigate(Routes.REGISTER) }
-            )
-        }
-        composable(Routes.REGISTER) {
-            CreateAccountScreen(
-                onAuthenticated = onAuthenticated,
-                onBackToLogin = { navController.popBackStack() }
-            )
-        }
+    }
 
-        // Phase 4 destinations: placeholders so the entry flow has somewhere to land
-        composable(
-            route = Routes.PROFILE_SETUP,
-            arguments = listOf(
-                navArgument(Routes.ARG_MODE) {
-                    type = NavType.StringType
-                    nullable = true
-                    defaultValue = null
-                }
-            )
-        ) {
-            PlaceholderScreen(
-                titleRes = R.string.placeholder_profile_setup,
-                onBackToLogin = backToLoginForTesting
-            )
+    // The bottom bar lives outside the NavHost so it stays put while tabs change
+    Scaffold(
+        containerColor = NutriCartTheme.colors.surface,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        bottomBar = {
+            if (currentTab != null) {
+                NutriBottomNav(selected = currentTab, onSelect = openTab)
+            }
         }
-        composable(Routes.HOME) {
-            PlaceholderScreen(
-                titleRes = R.string.placeholder_home,
-                onBackToLogin = backToLoginForTesting
-            )
+    ) { innerPadding ->
+        NavHost(
+            navController = navController,
+            startDestination = Routes.SPLASH,
+            modifier = Modifier
+                .padding(innerPadding)
+                .consumeWindowInsets(innerPadding),
+            enterTransition = { fadeIn(tween(FADE_MS)) },
+            exitTransition = { fadeOut(tween(FADE_MS)) }
+        ) {
+            composable(Routes.SPLASH) {
+                SplashScreen(
+                    onResolved = { result ->
+                        navController.navigate(Routes.forEntry(result.destination, result.storageError)) {
+                            popUpTo(Routes.SPLASH) { inclusive = true }
+                        }
+                    }
+                )
+            }
+            composable(
+                route = Routes.WELCOME,
+                arguments = listOf(
+                    navArgument(Routes.ARG_STORAGE_ERROR) {
+                        type = NavType.BoolType
+                        defaultValue = false
+                    }
+                )
+            ) { entry ->
+                OnboardingScreen(
+                    storageError = entry.arguments?.getBoolean(Routes.ARG_STORAGE_ERROR) == true,
+                    onFinished = {
+                        navController.navigate(Routes.LOGIN) {
+                            popUpTo(Routes.WELCOME) { inclusive = true }
+                        }
+                    },
+                    onRetry = {
+                        navController.navigate(Routes.SPLASH) {
+                            popUpTo(Routes.WELCOME) { inclusive = true }
+                        }
+                    }
+                )
+            }
+            composable(Routes.LOGIN) {
+                LoginScreen(
+                    onAuthenticated = onAuthenticated,
+                    onCreateAccount = { navController.navigate(Routes.REGISTER) }
+                )
+            }
+            composable(Routes.REGISTER) {
+                CreateAccountScreen(
+                    onAuthenticated = onAuthenticated,
+                    onBackToLogin = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                route = Routes.PROFILE_SETUP,
+                arguments = listOf(
+                    navArgument(Routes.ARG_MODE) {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    }
+                )
+            ) { entry ->
+                val isEdit = entry.arguments?.getString(Routes.ARG_MODE) == Routes.MODE_EDIT
+                ProfileSetupScreen(
+                    isEdit = isEdit,
+                    onSaved = {
+                        if (isEdit) {
+                            navController.popBackStack()
+                        } else {
+                            // Setup is cleared, so back on Home exits the app
+                            navController.navigate(Routes.HOME) {
+                                popUpTo(navController.graph.id) { inclusive = true }
+                            }
+                        }
+                    },
+                    onClose = {
+                        // First-time setup has nothing behind it, so leaving it leaves the app
+                        if (isEdit) navController.popBackStack() else activity?.finish()
+                    },
+                    onLoggedOut = onLoggedOut
+                )
+            }
+
+            // Bottom-navigation roots
+            composable(Routes.HOME) {
+                HomeScreen(onOpenProfile = { openTab(BottomNavTab.Profile) })
+            }
+            composable(Routes.LIST) {
+                UpcomingScreen(
+                    titleRes = R.string.upcoming_list_heading,
+                    messageRes = R.string.upcoming_list_message,
+                    iconRes = R.drawable.ic_list
+                )
+            }
+            composable(Routes.NUTRITION) {
+                UpcomingScreen(
+                    titleRes = R.string.upcoming_nutrition_heading,
+                    messageRes = R.string.upcoming_nutrition_message,
+                    iconRes = R.drawable.ic_chart
+                )
+            }
+            composable(Routes.PROFILE) {
+                ProfileScreen(
+                    onEditProfile = { navController.navigate(Routes.profileSetup(edit = true)) },
+                    onLoggedOut = onLoggedOut
+                )
+            }
         }
     }
 }

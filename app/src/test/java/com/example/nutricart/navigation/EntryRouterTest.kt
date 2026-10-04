@@ -37,7 +37,7 @@ class EntryRouterTest {
     private suspend fun register() = env.accounts.register("Arpita Roy", "arpita@example.com", "secret123")
 
     private suspend fun saveProfile() =
-        env.profiles.save("Rangpur Division", 4, emptySet(), HealthCondition.None)
+        env.profiles.save("Rangpur Division", 4, emptySet(), emptySet())
 
     @Test
     fun freshInstall_goesToWelcome() = runBlocking<Unit> {

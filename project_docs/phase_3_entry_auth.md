@@ -225,6 +225,8 @@ None added or changed. `viewModel()` and `HorizontalPager` come from libraries a
 
 ## Temporary testing placeholder
 
+**Removed in Phase 4.** Profile setup and Home are now real screens; this section is kept as a record.
+
 Added after on-device testing, because the first placeholder had no way forward or back and looked as if the app had frozen. It is used for both Phase 4 destinations (`profile/setup` and `home`) and must be replaced by the real screens in Phase 4.
 
 It shows:

@@ -46,7 +46,7 @@ class AuthViewModelsTest {
     // An existing account that is logged out again, optionally with a profile
     private fun existingAccount(withProfile: Boolean = false) = runBlocking {
         env.accounts.register("Arpita Roy", "arpita@example.com", "secret123")
-        if (withProfile) env.profiles.save("Rangpur Division", 4, emptySet(), HealthCondition.None)
+        if (withProfile) env.profiles.save("Rangpur Division", 4, emptySet(), emptySet())
         env.accounts.logout()
     }
 

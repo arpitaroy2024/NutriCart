@@ -51,6 +51,7 @@ fun NutriTextField(
     fieldModifier: Modifier = Modifier,
     placeholder: String? = null,
     enabled: Boolean = true,
+    readOnly: Boolean = false,
     isError: Boolean = false,
     errorMessage: String? = null,
     prefix: String? = null,
@@ -80,6 +81,7 @@ fun NutriTextField(
             onValueChange = onValueChange,
             modifier = fieldModifier.fillMaxWidth(),
             enabled = enabled,
+            readOnly = readOnly,
             textStyle = textStyle.copy(color = colors.onSurface),
             keyboardOptions = keyboardOptions,
             keyboardActions = keyboardActions,
@@ -158,7 +160,8 @@ fun NutriSearchField(
     )
 }
 
-// C-05 Dropdown. Typing in the field filters the options.
+// C-05 Dropdown. When searchable, typing in the field filters the options;
+// otherwise a tap opens the list without raising the keyboard.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NutriDropdown(
@@ -168,12 +171,13 @@ fun NutriDropdown(
     modifier: Modifier = Modifier,
     placeholder: String? = null,
     isError: Boolean = false,
-    errorMessage: String? = null
+    errorMessage: String? = null,
+    searchable: Boolean = true
 ) {
     val colors = NutriCartTheme.colors
     var expanded by remember { mutableStateOf(false) }
     var query by remember(value) { mutableStateOf(value) }
-    val filtered = if (query == value) {
+    val filtered = if (!searchable || query == value) {
         options
     } else {
         options.filter { it.contains(query, ignoreCase = true) }
@@ -185,13 +189,20 @@ fun NutriDropdown(
         modifier = modifier
     ) {
         NutriTextField(
-            value = query,
+            value = if (searchable) query else value,
             onValueChange = {
                 query = it
                 expanded = true
             },
-            fieldModifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable),
+            fieldModifier = Modifier.menuAnchor(
+                if (searchable) {
+                    ExposedDropdownMenuAnchorType.PrimaryEditable
+                } else {
+                    ExposedDropdownMenuAnchorType.PrimaryNotEditable
+                }
+            ),
             placeholder = placeholder,
+            readOnly = !searchable,
             isError = isError,
             errorMessage = errorMessage,
             trailingIcon = {

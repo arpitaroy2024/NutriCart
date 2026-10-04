@@ -46,13 +46,13 @@ class AccountIsolationTest {
     @Test
     fun profile_isSeparatePerAccountAndRestoredAfterLogin() = runBlocking<Unit> {
         registerFirst()
-        env.profiles.save("Rangpur Division", 4, setOf(Allergen.Peanuts, Allergen.Shellfish), HealthCondition.Diabetes)
+        env.profiles.save("Rangpur Division", 4, setOf(Allergen.Peanuts, Allergen.Shellfish), setOf(HealthCondition.Diabetes))
         env.accounts.logout()
 
         registerSecond()
         assertFalse(env.profiles.exists())
         assertNull(env.profiles.get())
-        env.profiles.save("Dhaka Division", 2, emptySet(), HealthCondition.None)
+        env.profiles.save("Dhaka Division", 2, emptySet(), emptySet())
         env.accounts.logout()
 
         env.accounts.login("first@example.com", "secret123")
@@ -60,7 +60,7 @@ class AccountIsolationTest {
         assertEquals("Rangpur Division", restored.region)
         assertEquals(4, restored.householdSize)
         assertEquals(setOf(Allergen.Peanuts, Allergen.Shellfish), restored.allergies)
-        assertEquals(HealthCondition.Diabetes, restored.condition)
+        assertEquals(setOf(HealthCondition.Diabetes), restored.conditions)
     }
 
     @Test
@@ -106,7 +106,7 @@ class AccountIsolationTest {
     @Test
     fun loggedOut_userDataIsUnreachable() = runBlocking<Unit> {
         registerFirst()
-        env.profiles.save("Rangpur Division", 4, emptySet(), HealthCondition.None)
+        env.profiles.save("Rangpur Division", 4, emptySet(), emptySet())
         val listId = env.lists.createList(12_000, listOf(NewListItem(5, 2, 160)))
         env.accounts.logout()
 

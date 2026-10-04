@@ -85,7 +85,7 @@ class EntryViewModelsTest {
         runBlocking {
             env.settings.setOnboardingComplete(true)
             env.accounts.register("Arpita Roy", "arpita@example.com", "secret123")
-            env.profiles.save("Rangpur Division", 4, emptySet(), HealthCondition.None)
+            env.profiles.save("Rangpur Division", 4, emptySet(), emptySet())
         }
 
         assertEquals(SplashResult(EntryDestination.Home), splashResult())

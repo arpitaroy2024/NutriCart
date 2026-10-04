@@ -1,9 +1,16 @@
 package com.example.nutricart.data.model
 
-// Options shown on the profile setup screen (SCR-03)
-enum class Allergen { Peanuts, Shellfish, Dairy, Eggs, Gluten }
+// Profile choices. The constant names are what the database stores, so they must not be
+// renamed; the wording shown to the user lives in strings.xml.
+// A free-text "other" entry is stored beside each set, not as a constant.
+enum class Allergen { Dairy, Eggs, Fish, Shellfish, Poultry, Beef, Soy, Peanuts, TreeNuts, Gluten, Sesame }
 
-enum class HealthCondition { None, Diabetes, Hypertension }
+// Dietary-planning inputs only; nothing here diagnoses or treats anything.
+// Having no condition is an empty set.
+enum class HealthCondition {
+    Diabetes, Prediabetes, Hypertension, HighCholesterol, HeartDisease, KidneyDisease,
+    LiverDisease, Pcos, Thyroid, Anemia, Celiac
+}
 
 // Protein, Grains and Veg are the filter chips drawn on SCR-05; the rest cover
 // the other items the PDFs show (oils, sugar, milk, fruit).
