@@ -1,3 +1,12 @@
 <resources>
     <string name="app_name">NutriCart</string>
+
+    <string name="nav_home">Home</string>
+    <string name="nav_list">List</string>
+    <string name="nav_nutrition">Nutrition</string>
+    <string name="nav_profile">Profile</string>
+
+    <string name="cd_back">Back</string>
+    <string name="cd_decrease">Decrease</string>
+    <string name="cd_increase">Increase</string>
 </resources>
