@@ -7,6 +7,7 @@ import com.example.nutricart.data.local.GroceryListEntity
 import com.example.nutricart.data.local.ListItemWithCatalog
 import com.example.nutricart.data.model.FoodCategory
 import com.example.nutricart.data.repository.GroceryListRepository
+import com.example.nutricart.domain.ListTotals
 import com.example.nutricart.navigation.Routes
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,16 +26,15 @@ data class GroceryListUiState(
     val items: List<ListItemWithCatalog> = emptyList(),
     val query: String = "",
     // Null is "All"
-    val category: FoodCategory? = null,
-    // Raised when Edit list is tapped; editing is built in Phase 6
-    val editUnavailableNotice: Boolean = false
+    val category: FoodCategory? = null
 ) {
     // Totals always cover the whole list, whatever the search and filter show
     val total: Int get() = items.sumOf { it.item.quantity * it.item.unitPrice }
     val budget: Int get() = list?.budget ?: 0
-    val remaining: Int get() = budget - total
-    val usedFraction: Float get() = if (budget > 0) total.toFloat() / budget else 0f
-    val usedPercent: Int get() = if (budget > 0) (total.toLong() * 100 / budget).toInt() else 0
+    val totals: ListTotals get() = ListTotals(total, budget)
+    val remaining: Int get() = totals.remaining
+    val usedPercent: Int get() = totals.usedPercent
+    val boughtCount: Int get() = items.count { it.item.bought }
 
     // Only categories the list actually contains, in their usual order
     val categories: List<FoodCategory>
@@ -85,8 +85,4 @@ class GroceryListViewModel(
     fun onBoughtChange(itemId: Long, bought: Boolean) {
         viewModelScope.launch { lists.setBought(itemId, bought) }
     }
-
-    fun onEditList() = _state.update { it.copy(editUnavailableNotice = true) }
-
-    fun onNoticeShown() = _state.update { it.copy(editUnavailableNotice = false) }
 }

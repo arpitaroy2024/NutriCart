@@ -124,6 +124,53 @@ interface ItemDao {
     @Query("DELETE FROM list_items WHERE listId = :listId AND id IN (:itemIds)")
     suspend fun deleteByIds(listId: Long, itemIds: List<Long>)
 
+    // Single edits, each limited to the lists of one account
+
+    // Adds delta to the stored quantity and keeps the result within the limits. Done in one
+    // statement, so quick repeated taps cannot overwrite each other.
+    @Query(
+        "UPDATE list_items SET quantity = MIN(:max, MAX(:min, quantity + :delta)) WHERE id = :itemId " +
+            "AND listId IN (SELECT id FROM grocery_lists WHERE accountId = :accountId)"
+    )
+    suspend fun changeQuantity(itemId: Long, accountId: Long, delta: Int, min: Int, max: Int): Int
+
+    @Query(
+        "SELECT * FROM list_items WHERE id = :itemId " +
+            "AND listId IN (SELECT id FROM grocery_lists WHERE accountId = :accountId)"
+    )
+    suspend fun getOwned(itemId: Long, accountId: Long): ListItemEntity?
+
+    @Query(
+        "DELETE FROM list_items WHERE id = :itemId " +
+            "AND listId IN (SELECT id FROM grocery_lists WHERE accountId = :accountId)"
+    )
+    suspend fun deleteOwned(itemId: Long, accountId: Long): Int
+
+    // Removes the item and returns it as it was, so it can be put back
+    @Transaction
+    suspend fun removeOwned(itemId: Long, accountId: Long): ListItemEntity? {
+        val item = getOwned(itemId, accountId) ?: return null
+        deleteOwned(itemId, accountId)
+        return item
+    }
+
+    @Query("SELECT * FROM list_items WHERE listId = :listId AND catalogItemId = :catalogItemId LIMIT 1")
+    suspend fun findInList(listId: Long, catalogItemId: Long): ListItemEntity?
+
+    // A list never holds the same catalog item twice: adding one that is already there
+    // raises its quantity instead. Returns true when an existing row was increased.
+    @Transaction
+    suspend fun addOrIncrease(item: ListItemEntity, max: Int): Boolean {
+        val existing = findInList(item.listId, item.catalogItemId)
+        return if (existing == null) {
+            insertAll(listOf(item))
+            false
+        } else {
+            updateQuantity(item.listId, existing.id, minOf(max, existing.quantity + item.quantity))
+            true
+        }
+    }
+
     // All edits to one list are written in a single transaction
     @Transaction
     suspend fun applyEdits(

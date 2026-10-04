@@ -513,18 +513,4 @@ class GroceryGenerationTest {
         env.awaitUntil { viewModel.state.value.items.none { it.item.bought } }
         assertTrue(items(listId).none { it.item.bought })
     }
-
-    @Test
-    fun list_editOnlyRaisesTheNotAvailableNotice() {
-        val listId = generate(12_000)
-        val viewModel = listScreen(listId)
-        val before = items(listId).map { it.item }
-
-        viewModel.onEditList()
-
-        assertTrue(viewModel.state.value.editUnavailableNotice)
-        viewModel.onNoticeShown()
-        assertFalse(viewModel.state.value.editUnavailableNotice)
-        assertEquals(before, items(listId).map { it.item })
-    }
 }

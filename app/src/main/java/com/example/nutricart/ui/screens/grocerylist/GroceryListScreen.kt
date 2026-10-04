@@ -19,15 +19,12 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -39,7 +36,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.nutricart.R
 import com.example.nutricart.data.local.CatalogItemEntity
@@ -56,7 +52,6 @@ import com.example.nutricart.ui.components.NutriCheckbox
 import com.example.nutricart.ui.components.NutriOutlinedButton
 import com.example.nutricart.ui.components.NutriSearchField
 import com.example.nutricart.ui.components.NutriTopBar
-import com.example.nutricart.ui.components.ProgressRail
 import com.example.nutricart.ui.components.TagChip
 import com.example.nutricart.ui.formatTk
 import com.example.nutricart.ui.labelRes
@@ -72,38 +67,28 @@ private const val BoughtAlpha = 0.5f
 
 // SCR-05. onBack is set when the screen is pushed after generation; as the List tab it is
 // null, there is no back button, and the bottom bar is drawn by the nav host.
+// onEditList opens the editor for the list on screen, by its id.
 @Composable
 fun GroceryListScreen(
     onBack: (() -> Unit)?,
+    onEditList: (Long) -> Unit,
     viewModel: GroceryListViewModel = viewModel(factory = AppViewModelFactory)
 ) {
     val state by viewModel.state.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
-    val notice = stringResource(R.string.list_edit_unavailable)
-
-    LaunchedEffect(state.editUnavailableNotice) {
-        if (state.editUnavailableNotice) {
-            // Cleared only after the message has gone, so clearing it does not cancel the message
-            snackbarHostState.showSnackbar(notice)
-            viewModel.onNoticeShown()
-        }
-    }
 
     GroceryListContent(
         state = state,
-        snackbarHostState = snackbarHostState,
         onBack = onBack,
         onQueryChange = viewModel::onQueryChange,
         onCategorySelected = viewModel::onCategorySelected,
         onBoughtChange = viewModel::onBoughtChange,
-        onEditList = viewModel::onEditList
+        onEditList = { state.list?.let { onEditList(it.id) } }
     )
 }
 
 @Composable
 private fun GroceryListContent(
     state: GroceryListUiState,
-    snackbarHostState: SnackbarHostState,
     onBack: (() -> Unit)?,
     onQueryChange: (String) -> Unit,
     onCategorySelected: (FoodCategory?) -> Unit,
@@ -115,7 +100,6 @@ private fun GroceryListContent(
         containerColor = colors.surface,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = { NutriTopBar(title = stringResource(R.string.list_title), onBack = onBack) },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             if (state.list != null) {
                 SummaryBar(state = state, onEditList = onEditList)
@@ -137,6 +121,20 @@ private fun GroceryListContent(
                     message = stringResource(R.string.list_empty_message),
                     icon = painterResource(R.drawable.ic_list),
                     modifier = Modifier.align(Alignment.Center)
+                )
+                // Every item was removed in the editor
+                state.items.isEmpty() -> EmptyState(
+                    title = stringResource(R.string.list_all_removed_title),
+                    message = stringResource(R.string.list_all_removed_message),
+                    icon = painterResource(R.drawable.ic_list),
+                    modifier = Modifier.align(Alignment.Center),
+                    action = {
+                        NutriOutlinedButton(
+                            text = stringResource(R.string.list_add_groceries),
+                            onClick = onEditList,
+                            leadingIcon = painterResource(R.drawable.ic_plus)
+                        )
+                    }
                 )
                 else -> ListBody(
                     state = state,
@@ -277,10 +275,8 @@ private fun ItemCard(entry: ListItemWithCatalog, onBoughtChange: (Boolean) -> Un
 // The docked total: always visible, and laid out below the list so it never covers an item
 @Composable
 private fun SummaryBar(state: GroceryListUiState, onEditList: () -> Unit) {
-    val colors = NutriCartTheme.colors
-    val overBudget = state.remaining < 0
     Surface(
-        color = colors.surfaceCard,
+        color = NutriCartTheme.colors.surfaceCard,
         shape = NutriCartShapes.sheet,
         shadowElevation = Elevation.dockedBar
     ) {
@@ -289,46 +285,15 @@ private fun SummaryBar(state: GroceryListUiState, onEditList: () -> Unit) {
                 .fillMaxWidth()
                 .navigationBarsPadding()
                 .padding(horizontal = Spacing.gutter, vertical = Spacing.md),
-            verticalArrangement = Arrangement.spacedBy(Spacing.xs)
+            verticalArrangement = Arrangement.spacedBy(Spacing.sm)
         ) {
-            SummaryRow(
-                label = stringResource(R.string.list_estimated_total),
-                value = formatTk(state.total),
-                valueColor = colors.onSurface
-            )
-            SummaryRow(
-                label = stringResource(R.string.list_remaining_budget),
-                value = formatTk(state.remaining),
-                valueColor = if (overBudget) colors.danger else colors.primary
-            )
-            ProgressRail(
-                progress = state.usedFraction,
-                color = if (overBudget) colors.danger else colors.primary
-            )
-            Text(
-                text = stringResource(R.string.list_budget_used, state.usedPercent, formatTk(state.budget)),
-                style = NutriCartTheme.typography.caption,
-                color = colors.onSurfaceMuted
+            BudgetSummary(
+                totals = state.totals,
+                itemCount = state.items.size,
+                boughtCount = state.boughtCount
             )
             NutriOutlinedButton(text = stringResource(R.string.list_edit), onClick = onEditList)
         }
-    }
-}
-
-@Composable
-private fun SummaryRow(label: String, value: String, valueColor: androidx.compose.ui.graphics.Color) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            text = label,
-            modifier = Modifier.weight(1f),
-            style = NutriCartTheme.typography.caption,
-            color = NutriCartTheme.colors.onSurfaceMuted
-        )
-        Text(
-            text = value,
-            style = NutriCartTheme.typography.stat.copy(fontSize = 24.sp, lineHeight = 28.sp),
-            color = valueColor
-        )
     }
 }
 
@@ -355,7 +320,6 @@ private fun GroceryListPreview() {
                     entry(3, "Sample item", FoodCategory.Veg, NutrientTag.Iron, 4, 90)
                 )
             ),
-            snackbarHostState = remember { SnackbarHostState() },
             onBack = {},
             onQueryChange = {},
             onCategorySelected = {},

@@ -24,6 +24,8 @@ fun NutriStepper(
     min: Int = 1,
     max: Int = 99,
     caption: String? = null,
+    decreaseDescription: String = stringResource(R.string.cd_decrease),
+    increaseDescription: String = stringResource(R.string.cd_increase),
     valueStyle: TextStyle = NutriCartTheme.typography.stat.copy(fontSize = 24.sp, lineHeight = 28.sp),
     horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(Spacing.xs)
 ) {
@@ -35,7 +37,7 @@ fun NutriStepper(
     ) {
         CircleIconButton(
             icon = painterResource(R.drawable.ic_minus),
-            contentDescription = stringResource(R.string.cd_decrease),
+            contentDescription = decreaseDescription,
             onClick = { onValueChange(value - 1) },
             enabled = value > min
         )
@@ -51,7 +53,7 @@ fun NutriStepper(
         }
         CircleIconButton(
             icon = painterResource(R.drawable.ic_plus),
-            contentDescription = stringResource(R.string.cd_increase),
+            contentDescription = increaseDescription,
             onClick = { onValueChange(value + 1) },
             enabled = value < max
         )

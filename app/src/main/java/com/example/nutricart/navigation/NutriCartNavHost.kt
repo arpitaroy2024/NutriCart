@@ -23,6 +23,8 @@ import com.example.nutricart.ui.components.BottomNavTab
 import com.example.nutricart.ui.components.NutriBottomNav
 import com.example.nutricart.ui.screens.auth.CreateAccountScreen
 import com.example.nutricart.ui.screens.auth.LoginScreen
+import com.example.nutricart.ui.screens.editlist.AddItemsScreen
+import com.example.nutricart.ui.screens.editlist.EditListScreen
 import com.example.nutricart.ui.screens.generate.GenerateScreen
 import com.example.nutricart.ui.screens.grocerylist.GroceryListScreen
 import com.example.nutricart.ui.screens.home.HomeScreen
@@ -64,6 +66,8 @@ fun NutriCartNavHost(navController: NavHostController = rememberNavController())
             restoreState = true
         }
     }
+
+    val openEditor: (Long) -> Unit = { listId -> navController.navigate(Routes.listEdit(listId)) }
 
     // The bottom bar lives outside the NavHost so it stays put while tabs change
     Scaffold(
@@ -170,7 +174,7 @@ fun NutriCartNavHost(navController: NavHostController = rememberNavController())
             }
             // The List tab: the account's latest list
             composable(Routes.LIST) {
-                GroceryListScreen(onBack = null)
+                GroceryListScreen(onBack = null, onEditList = openEditor)
             }
 
             // Generation is a destination of its own, so it survives rotation. It is removed
@@ -197,7 +201,24 @@ fun NutriCartNavHost(navController: NavHostController = rememberNavController())
                 route = Routes.LIST_DETAIL,
                 arguments = listOf(navArgument(Routes.ARG_LIST_ID) { type = NavType.LongType })
             ) {
-                GroceryListScreen(onBack = { navController.popBackStack() })
+                GroceryListScreen(onBack = { navController.popBackStack() }, onEditList = openEditor)
+            }
+
+            // The editor and its item picker always work on the list named in the route
+            composable(
+                route = Routes.LIST_EDIT,
+                arguments = listOf(navArgument(Routes.ARG_LIST_ID) { type = NavType.LongType })
+            ) {
+                EditListScreen(
+                    onBack = { navController.popBackStack() },
+                    onAddItems = { listId -> navController.navigate(Routes.listAdd(listId)) }
+                )
+            }
+            composable(
+                route = Routes.LIST_ADD,
+                arguments = listOf(navArgument(Routes.ARG_LIST_ID) { type = NavType.LongType })
+            ) {
+                AddItemsScreen(onBack = { navController.popBackStack() })
             }
             composable(Routes.NUTRITION) {
                 UpcomingScreen(

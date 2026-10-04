@@ -7,6 +7,7 @@ import com.example.nutricart.data.local.GroceryListEntity
 import com.example.nutricart.data.local.ItemDao
 import com.example.nutricart.data.local.ListItemEntity
 import com.example.nutricart.data.local.ListItemWithCatalog
+import com.example.nutricart.domain.ListRules
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.text.SimpleDateFormat
@@ -18,6 +19,8 @@ data class NewListItem(
     val quantity: Int,
     val unitPrice: Int
 )
+
+enum class AddItemResult { Added, QuantityIncreased, ListNotFound }
 
 // The logged-in account's grocery lists and their items
 interface GroceryListRepository {
@@ -38,6 +41,20 @@ interface GroceryListRepository {
 
     // Records "keep anyway" on a flagged item
     suspend fun overrideAlert(itemId: Long)
+
+    // Single edits, saved as they are made
+
+    // Adds delta (usually +1 or -1) to an item's quantity, kept within ListRules
+    suspend fun changeQuantity(itemId: Long, delta: Int)
+
+    // Removes the item and returns it for a later undo; null if it is not on one of this account's lists
+    suspend fun removeItem(itemId: Long): ListItemEntity?
+
+    // Puts back an item returned by removeItem, in its old place and with its old state
+    suspend fun restoreItem(item: ListItemEntity): Boolean
+
+    // Adds one unit of a catalog item at the given price, or raises the quantity if the list has it already
+    suspend fun addItem(listId: Long, catalogItemId: Long, unitPrice: Int): AddItemResult
 
     // Applies every change from an edit session in one transaction
     suspend fun saveEdits(
@@ -93,6 +110,35 @@ class LocalGroceryListRepository(
     override suspend fun overrideAlert(itemId: Long) {
         itemDao.setAlertOverridden(itemId, settings.requireAccountId())
     }
+
+    override suspend fun changeQuantity(itemId: Long, delta: Int) {
+        itemDao.changeQuantity(
+            itemId, settings.requireAccountId(), delta, ListRules.MIN_QUANTITY, ListRules.MAX_QUANTITY
+        )
+    }
+
+    override suspend fun removeItem(itemId: Long): ListItemEntity? =
+        itemDao.removeOwned(itemId, settings.requireAccountId())
+
+    override suspend fun restoreItem(item: ListItemEntity): Boolean {
+        if (!ownsList(item.listId)) return false
+        // If the same catalog item was added again in the meantime, the two are merged
+        itemDao.addOrIncrease(item, ListRules.MAX_QUANTITY)
+        return true
+    }
+
+    override suspend fun addItem(listId: Long, catalogItemId: Long, unitPrice: Int): AddItemResult {
+        require(unitPrice > 0) { "An item needs a price to be added" }
+        if (!ownsList(listId)) return AddItemResult.ListNotFound
+        val increased = itemDao.addOrIncrease(
+            ListItemEntity(listId = listId, catalogItemId = catalogItemId, quantity = 1, unitPrice = unitPrice),
+            ListRules.MAX_QUANTITY
+        )
+        return if (increased) AddItemResult.QuantityIncreased else AddItemResult.Added
+    }
+
+    private suspend fun ownsList(listId: Long): Boolean =
+        listDao.get(listId, settings.requireAccountId()) != null
 
     override suspend fun saveEdits(
         listId: Long,

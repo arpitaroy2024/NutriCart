@@ -12,6 +12,7 @@ object Routes {
     const val LIST = "list"
     const val LIST_DETAIL = "list/{listId}"
     const val LIST_EDIT = "list/{listId}/edit"
+    const val LIST_ADD = "list/{listId}/add"
     const val ITEM = "item/{itemId}"
     const val NUTRITION = "nutrition"
     const val NUTRITION_DETAIL = "nutrition/{listId}"
@@ -33,6 +34,10 @@ object Routes {
     fun generate(budget: Int) = "generate?budget=$budget"
 
     fun listDetail(listId: Long) = "list/$listId"
+
+    fun listEdit(listId: Long) = "list/$listId/edit"
+
+    fun listAdd(listId: Long) = "list/$listId/add"
 
     fun forEntry(destination: EntryDestination, storageError: Boolean = false) = when (destination) {
         EntryDestination.Welcome -> welcome(storageError)

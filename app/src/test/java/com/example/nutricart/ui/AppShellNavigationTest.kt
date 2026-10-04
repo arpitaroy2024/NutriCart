@@ -22,6 +22,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.example.nutricart.NutriCartApp
 import com.example.nutricart.data.model.Allergen
 import com.example.nutricart.data.model.HealthCondition
+import com.example.nutricart.data.repository.NewListItem
 import com.example.nutricart.navigation.NutriCartNavHost
 import com.example.nutricart.navigation.Routes
 import com.example.nutricart.ui.theme.NutriCartTheme
@@ -307,11 +308,6 @@ class AppShellNavigationTest {
                 .first { it.catalog.name == "Lentils (Masoor)" }.item.bought
         }
 
-        // Edit list is not built yet and says so
-        composeRule.onNodeWithText("Edit list").performClick()
-        awaitText("Editing isn't available yet. It is built in Phase 6.")
-        assertEquals(Routes.LIST_DETAIL, currentRoute())
-
         composeRule.runOnUiThread { navController.popBackStack() }
         awaitRoute(Routes.HOME)
         assertEquals(listOf(Routes.HOME), backStackRoutes())
@@ -324,6 +320,117 @@ class AppShellNavigationTest {
         awaitRoute(Routes.LIST)
         awaitText("Lentils (Masoor)")
         assertEquals(listOf(Routes.HOME, Routes.LIST), backStackRoutes())
+    }
+
+    @Test
+    fun editing_changesAreSavedAndShownEverywhere() {
+        registered(withProfile = true)
+        val listId = runBlocking {
+            container.catalogRepository.items()
+            // Lentils 2 x 160 + eggs 30 x 14 + potato 4 x 35 = 880 of a 1,000 budget
+            container.groceryListRepository.createList(
+                1_000, listOf(NewListItem(5, 2, 160), NewListItem(8, 30, 14), NewListItem(20, 4, 35))
+            )
+        }
+        fun stored() = runBlocking { container.groceryListRepository.getItems(listId) }
+        fun quantity(catalogId: Long) = stored().firstOrNull { it.catalog.id == catalogId }?.item?.quantity
+
+        launch()
+        awaitRoute(Routes.HOME)
+        composeRule.onNodeWithText("List").performClick()
+        awaitRoute(Routes.LIST)
+        awaitText("Tk 880")
+        awaitText("Tk 120")
+
+        // Edit list opens the editor for this list, without the bottom bar
+        composeRule.onNodeWithText("Edit list").performClick()
+        awaitRoute(Routes.LIST_EDIT)
+        assertEquals(listId, navController.currentBackStackEntry?.arguments?.getLong(Routes.ARG_LIST_ID))
+        awaitText("Lentils (Masoor)")
+        composeRule.onAllNodesWithText("Profile").assertCountEquals(0)
+
+        // Quantity: one more kilogram of lentils takes the list over its budget, and says so
+        composeRule.onNodeWithContentDescription("Increase Lentils (Masoor)").performClick()
+        waitFor("lentils to be 3") { quantity(5) == 3 }
+        awaitText("Tk 1,040")
+        awaitText("Over budget")
+        awaitText("Tk 40")
+        composeRule.onNodeWithText("over your Tk 1,000 budget", substring = true).assertExists()
+        composeRule.onNodeWithContentDescription("Decrease Lentils (Masoor)").performClick()
+        waitFor("lentils to be 2") { quantity(5) == 2 }
+        awaitText("Remaining budget")
+
+        // Remove, then undo
+        composeRule.onNodeWithContentDescription("Remove Eggs").performClick()
+        waitFor("eggs to be removed") { quantity(8) == null }
+        awaitText("Eggs removed")
+        composeRule.onNodeWithText("Undo").performClick()
+        waitFor("eggs to be restored") { quantity(8) == 30 }
+        assertEquals(listOf(5L, 8L, 20L), stored().map { it.catalog.id })
+
+        // Add from the catalog: search, filter, add, and add the same item again
+        composeRule.onNodeWithText("Add item").performClick()
+        awaitRoute(Routes.LIST_ADD)
+        awaitText("Search groceries")
+        composeRule.onAllNodes(hasSetTextAction()).onFirst().performTextInput("TOM")
+        awaitText("Tomato")
+        composeRule.onAllNodesWithText("Potato").assertCountEquals(0)
+        composeRule.onNodeWithContentDescription("Add Tomato").performClick()
+        waitFor("tomato to be added") { quantity(22) == 1 }
+        awaitText("In your list: 1 kg")
+        composeRule.onNodeWithContentDescription("Add 1 more Tomato").performClick()
+        waitFor("tomato to be 2") { quantity(22) == 2 }
+        assertEquals(1, stored().count { it.catalog.id == 22L })
+        awaitText("Total Tk 1,000")
+        awaitText("Tk 0 left")
+
+        composeRule.onAllNodes(hasSetTextAction()).onFirst().performTextInput("zzz")
+        awaitText("No groceries found")
+        composeRule.onAllNodes(hasSetTextAction()).onFirst().performTextClearance()
+        composeRule.onNodeWithText("Oils").performClick()
+        awaitText("Mustard oil")
+        composeRule.onAllNodesWithText("Tomato").assertCountEquals(0)
+
+        // Back to the editor, then Done back to the list: everything is there
+        composeRule.runOnUiThread { navController.popBackStack() }
+        awaitRoute(Routes.LIST_EDIT)
+        awaitText("Tomato")
+        composeRule.onNodeWithText("Done").performClick()
+        awaitRoute(Routes.LIST)
+        assertEquals(listOf(Routes.HOME, Routes.LIST), backStackRoutes())
+        awaitText("Tomato")
+        awaitText("Tk 1,000")
+        composeRule.onNodeWithText("4 items").assertExists()
+
+        // And Home's card follows
+        composeRule.onNodeWithText("Home").performClick()
+        awaitRoute(Routes.HOME)
+        awaitText("4 items")
+        assertEquals(1_000, stored().sumOf { it.item.quantity * it.item.unitPrice })
+    }
+
+    @Test
+    fun editing_removingEverythingLeavesAnEmptyListWithAWayToAdd() {
+        registered(withProfile = true)
+        val listId = runBlocking {
+            container.catalogRepository.items()
+            container.groceryListRepository.createList(1_000, listOf(NewListItem(5, 2, 160)))
+        }
+        launch()
+        awaitRoute(Routes.HOME)
+        composeRule.onNodeWithText("List").performClick()
+        awaitRoute(Routes.LIST)
+        awaitText("Edit list")
+        composeRule.onNodeWithText("Edit list").performClick()
+        awaitRoute(Routes.LIST_EDIT)
+        awaitText("Lentils (Masoor)")
+
+        composeRule.onNodeWithContentDescription("Remove Lentils (Masoor)").performClick()
+
+        awaitText("Your list is empty")
+        composeRule.onNodeWithText("Add groceries").performClick()
+        awaitRoute(Routes.LIST_ADD)
+        assertEquals(listId, navController.currentBackStackEntry?.arguments?.getLong(Routes.ARG_LIST_ID))
     }
 
     @Test

@@ -184,9 +184,43 @@
     <string name="cd_mark_bought">Bought: %1$s</string>
     <string name="list_estimated_total">Estimated total</string>
     <string name="list_remaining_budget">Remaining budget</string>
+    <string name="list_over_budget">Over budget</string>
+    <string name="list_over_budget_note">Your list is %1$s over your %2$s budget · demo prices</string>
+    <plurals name="list_bought_suffix">
+        <item quantity="one"> · %1$d bought</item>
+        <item quantity="other"> · %1$d bought</item>
+    </plurals>
     <string name="list_budget_used">%1$d%% of %2$s used · demo prices, not market prices</string>
     <string name="list_edit">Edit list</string>
-    <string name="list_edit_unavailable">Editing isn\'t available yet. It is built in Phase 6.</string>
+    <string name="list_all_removed_title">Your list is empty</string>
+    <string name="list_all_removed_message">Add groceries to start it again.</string>
+    <string name="list_add_groceries">Add groceries</string>
+
+    <!-- Edit list (SCR-06) and its item picker -->
+    <string name="edit_title">Edit list</string>
+    <string name="edit_add_item">Add item</string>
+    <string name="action_done">Done</string>
+    <string name="action_undo">Undo</string>
+    <string name="edit_removed">%1$s removed</string>
+    <string name="edit_save_failed">Couldn\'t save that change. Please try again.</string>
+    <string name="edit_unavailable_title">This list isn\'t available</string>
+    <string name="edit_unavailable_message">Go back and open your list again.</string>
+    <string name="price_per_unit">%1$s per %2$s</string>
+    <string name="cd_decrease_item">Decrease %1$s</string>
+    <string name="cd_increase_item">Increase %1$s</string>
+    <string name="add_title">Add groceries</string>
+    <string name="add_search_placeholder">Search groceries</string>
+    <string name="add_category_and_price">%1$s · %2$s</string>
+    <string name="add_price_unavailable">Price unavailable for your region</string>
+    <string name="add_in_list">In your list: %1$d %2$s</string>
+    <string name="add_one_more">1 more</string>
+    <string name="cd_add_item">Add %1$s</string>
+    <string name="cd_add_one_more">Add 1 more %1$s</string>
+    <string name="add_no_results_title">No groceries found</string>
+    <string name="add_running_total">Total %1$s</string>
+    <string name="add_left">%1$s left</string>
+    <string name="add_over_budget">%1$s over budget</string>
+
     <string name="list_empty_title">No grocery list yet</string>
     <string name="list_empty_message">Enter your monthly budget on Home to build one.</string>
     <string name="list_no_matches_title">No items match</string>
