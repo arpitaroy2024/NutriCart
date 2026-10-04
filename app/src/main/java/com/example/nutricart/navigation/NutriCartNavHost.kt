@@ -23,6 +23,8 @@ import com.example.nutricart.ui.components.BottomNavTab
 import com.example.nutricart.ui.components.NutriBottomNav
 import com.example.nutricart.ui.screens.auth.CreateAccountScreen
 import com.example.nutricart.ui.screens.auth.LoginScreen
+import com.example.nutricart.ui.screens.generate.GenerateScreen
+import com.example.nutricart.ui.screens.grocerylist.GroceryListScreen
 import com.example.nutricart.ui.screens.home.HomeScreen
 import com.example.nutricart.ui.screens.onboarding.OnboardingScreen
 import com.example.nutricart.ui.screens.profile.ProfileScreen
@@ -160,14 +162,42 @@ fun NutriCartNavHost(navController: NavHostController = rememberNavController())
 
             // Bottom-navigation roots
             composable(Routes.HOME) {
-                HomeScreen(onOpenProfile = { openTab(BottomNavTab.Profile) })
-            }
-            composable(Routes.LIST) {
-                UpcomingScreen(
-                    titleRes = R.string.upcoming_list_heading,
-                    messageRes = R.string.upcoming_list_message,
-                    iconRes = R.drawable.ic_list
+                HomeScreen(
+                    onOpenProfile = { openTab(BottomNavTab.Profile) },
+                    onGenerate = { budget -> navController.navigate(Routes.generate(budget)) },
+                    onOpenList = { openTab(BottomNavTab.GroceryList) }
                 )
+            }
+            // The List tab: the account's latest list
+            composable(Routes.LIST) {
+                GroceryListScreen(onBack = null)
+            }
+
+            // Generation is a destination of its own, so it survives rotation. It is removed
+            // when the list opens, which makes back from the new list return to Home.
+            composable(
+                route = Routes.GENERATE,
+                arguments = listOf(
+                    navArgument(Routes.ARG_BUDGET) {
+                        type = NavType.IntType
+                        defaultValue = 0
+                    }
+                )
+            ) {
+                GenerateScreen(
+                    onListReady = { listId ->
+                        navController.navigate(Routes.listDetail(listId)) {
+                            popUpTo(Routes.GENERATE) { inclusive = true }
+                        }
+                    },
+                    onClosed = { navController.popBackStack() }
+                )
+            }
+            composable(
+                route = Routes.LIST_DETAIL,
+                arguments = listOf(navArgument(Routes.ARG_LIST_ID) { type = NavType.LongType })
+            ) {
+                GroceryListScreen(onBack = { navController.popBackStack() })
             }
             composable(Routes.NUTRITION) {
                 UpcomingScreen(

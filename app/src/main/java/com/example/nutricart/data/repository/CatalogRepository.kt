@@ -5,6 +5,7 @@ import com.example.nutricart.data.local.CatalogItemEntity
 import com.example.nutricart.data.local.CatalogSeed
 import com.example.nutricart.data.local.DemoCatalogSeed
 import com.example.nutricart.data.local.RegionPriceEntity
+import com.example.nutricart.domain.BasketSlot
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -18,6 +19,9 @@ interface CatalogRepository {
     suspend fun prices(region: String): Map<Long, RegionPriceEntity>
 
     suspend fun price(itemId: Long, region: String): RegionPriceEntity?
+
+    // The monthly basket that goes with this catalog, for the grocery generator
+    fun basketTemplate(): List<BasketSlot>
 }
 
 class LocalCatalogRepository(
@@ -58,4 +62,6 @@ class LocalCatalogRepository(
         ensureSeeded()
         return catalogDao.price(itemId, region)
     }
+
+    override fun basketTemplate(): List<BasketSlot> = seed.basket
 }

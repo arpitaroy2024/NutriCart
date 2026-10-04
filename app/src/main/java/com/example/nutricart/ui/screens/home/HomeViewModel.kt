@@ -4,15 +4,27 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.nutricart.data.repository.AccountRepository
+import com.example.nutricart.data.repository.GroceryListRepository
 import com.example.nutricart.data.repository.ProfileRepository
 import com.example.nutricart.domain.BudgetError
 import com.example.nutricart.domain.BudgetRules
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+
+// What Home shows about the account's latest list. Nutrition score and alert count are
+// added with the phases that compute them.
+data class ListSummary(val itemCount: Int, val total: Int, val budget: Int) {
+    val usedFraction: Float get() = if (budget > 0) total.toFloat() / budget else 0f
+    val usedPercent: Int get() = if (budget > 0) (total.toLong() * 100 / budget).toInt() else 0
+}
 
 data class HomeUiState(
     val accountName: String = "",
@@ -22,8 +34,11 @@ data class HomeUiState(
     val budget: String = "",
     // True once the user has left the field or tried to generate
     val budgetChecked: Boolean = false,
-    // Raised when Generate is tapped with a valid budget; the screen shows a notice and clears it
-    val generationUnavailableNotice: Boolean = false
+    // The latest list, or null while the account has none
+    val currentList: ListSummary? = null,
+    // Set when Generate is tapped with a valid budget; the screen opens the processing
+    // screen with this amount and clears it
+    val generateRequest: Int? = null
 ) {
     val budgetError: BudgetError?
         get() = if (budgetChecked) BudgetRules.validate(budget) else null
@@ -32,9 +47,11 @@ data class HomeUiState(
     val canGenerate: Boolean get() = budget.isNotEmpty()
 }
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class HomeViewModel(
     accounts: AccountRepository,
     profiles: ProfileRepository,
+    lists: GroceryListRepository,
     private val savedState: SavedStateHandle
 ) : ViewModel() {
 
@@ -57,6 +74,26 @@ class HomeViewModel(
         }
     }
 
+    init {
+        viewModelScope.launch {
+            lists.observeLatestList()
+                .flatMapLatest { list ->
+                    if (list == null) {
+                        flowOf(null)
+                    } else {
+                        lists.observeItems(list.id).map { items ->
+                            ListSummary(
+                                itemCount = items.size,
+                                total = items.sumOf { it.item.quantity * it.item.unitPrice },
+                                budget = list.budget
+                            )
+                        }
+                    }
+                }
+                .collect { summary -> _state.update { it.copy(currentList = summary) } }
+        }
+    }
+
     fun onBudgetChange(input: String) {
         val budget = BudgetRules.sanitize(input)
         savedState[KEY_BUDGET] = budget
@@ -65,19 +102,19 @@ class HomeViewModel(
 
     fun onBudgetFocusLost() = _state.update { it.copy(budgetChecked = it.budget.isNotEmpty()) }
 
-    // Grocery generation is built in Phase 5. Until then a valid budget only raises a notice.
+    // A valid budget asks the screen to start generation; an invalid one shows its error
     fun onGenerate() {
         val current = _state.value
         if (!current.canGenerate) return
         _state.update {
             it.copy(
                 budgetChecked = true,
-                generationUnavailableNotice = BudgetRules.isValid(current.budget)
+                generateRequest = current.budget.toInt().takeIf { BudgetRules.isValid(current.budget) }
             )
         }
     }
 
-    fun onNoticeShown() = _state.update { it.copy(generationUnavailableNotice = false) }
+    fun onGenerateHandled() = _state.update { it.copy(generateRequest = null) }
 
     private companion object {
         const val KEY_BUDGET = "budget"

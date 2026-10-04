@@ -747,7 +747,7 @@ class ProfileSelectionTest {
         viewModel.saveAndWait()
 
         assertEquals(20, reopened().form.householdSize)
-        val home = HomeViewModel(env.accounts, env.profiles, SavedStateHandle())
+        val home = HomeViewModel(env.accounts, env.profiles, env.lists, SavedStateHandle())
         env.awaitUntil { home.state.value.householdSize != null }
         assertEquals(20, home.state.value.householdSize)
     }

@@ -9,6 +9,8 @@ import com.example.nutricart.AppContainer
 import com.example.nutricart.NutriCartApp
 import com.example.nutricart.ui.screens.auth.CreateAccountViewModel
 import com.example.nutricart.ui.screens.auth.LoginViewModel
+import com.example.nutricart.ui.screens.generate.GenerateViewModel
+import com.example.nutricart.ui.screens.grocerylist.GroceryListViewModel
 import com.example.nutricart.ui.screens.home.HomeViewModel
 import com.example.nutricart.ui.screens.onboarding.OnboardingViewModel
 import com.example.nutricart.ui.screens.profile.ProfileViewModel
@@ -25,6 +27,22 @@ val AppViewModelFactory = viewModelFactory {
     initializer { LoginViewModel(container.accountRepository, container.entryRouter) }
     initializer { CreateAccountViewModel(container.accountRepository, container.entryRouter) }
     initializer { ProfileSetupViewModel(container.profileRepository, container.accountRepository) }
-    initializer { HomeViewModel(container.accountRepository, container.profileRepository, createSavedStateHandle()) }
+    initializer {
+        HomeViewModel(
+            container.accountRepository,
+            container.profileRepository,
+            container.groceryListRepository,
+            createSavedStateHandle()
+        )
+    }
+    initializer {
+        GenerateViewModel(
+            createSavedStateHandle(),
+            container.profileRepository,
+            container.catalogRepository,
+            container.groceryListRepository
+        )
+    }
+    initializer { GroceryListViewModel(createSavedStateHandle(), container.groceryListRepository) }
     initializer { ProfileViewModel(container.accountRepository, container.profileRepository) }
 }

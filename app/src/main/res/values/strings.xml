@@ -135,10 +135,62 @@
     <string name="error_budget_min">Enter at least Tk %1$s</string>
     <string name="error_budget_max">Enter no more than Tk %1$s</string>
     <string name="home_generate">Generate grocery list</string>
-    <string name="home_generate_note">Not available yet: list generation is built in Phase 5.</string>
-    <string name="home_generate_unavailable">List generation isn\'t available yet. It is built in Phase 5.</string>
     <string name="home_empty_title">No grocery list yet</string>
-    <string name="home_empty_message">Your list, nutrition score and alerts will appear here once you can generate a list.</string>
+    <string name="home_empty_message">Enter a monthly budget above and NutriCart builds a list for your household.</string>
+    <string name="home_current_list">This month so far</string>
+    <plurals name="list_item_count">
+        <item quantity="one">%1$d item</item>
+        <item quantity="other">%1$d items</item>
+    </plurals>
+    <string name="home_list_total">%1$s of %2$s</string>
+    <string name="home_list_used">%1$d%% of budget used</string>
+    <string name="home_view_list">View list</string>
+    <string name="action_try_again">Try again</string>
+
+    <!-- Building your list (SCR-10) -->
+    <string name="generate_title">Building your list</string>
+    <string name="generate_subtitle">Usually takes a few seconds</string>
+    <string name="generate_percent">%1$d%%</string>
+    <string name="generate_ring_label">Building</string>
+    <string name="generate_step_prices">Reading regional prices</string>
+    <string name="generate_step_balance">Balancing food groups</string>
+    <string name="generate_step_budget">Fitting to your budget</string>
+    <string name="generate_step_profile">Applying your allergies and conditions</string>
+    <string name="generate_budget_chip">Budget %1$s</string>
+    <string name="generate_error_title">Couldn\'t build your list</string>
+    <string name="generate_error_budget_with_amount">This budget can\'t cover a basic list for your household. Try %1$s or more.</string>
+    <string name="generate_error_budget">This budget can\'t cover a basic list for your household. Try a larger amount.</string>
+    <string name="generate_error_no_prices">There are no prices for %1$s yet.</string>
+    <string name="generate_error_nothing_eligible">Nothing in the catalog fits your profile yet.</string>
+    <string name="generate_error_unexpected">Something went wrong. Nothing was saved.</string>
+    <string name="generate_back_home">Back to Home</string>
+
+    <!-- Grocery list (SCR-05) -->
+    <string name="list_title">Grocery list</string>
+    <string name="list_search_placeholder">Search items</string>
+    <string name="list_filter_all">All</string>
+    <string name="category_protein">Protein</string>
+    <string name="category_grains">Grains</string>
+    <string name="category_veg">Veg</string>
+    <string name="category_fruit">Fruit</string>
+    <string name="category_dairy">Dairy</string>
+    <string name="category_oils">Oils</string>
+    <string name="category_pantry">Pantry</string>
+    <string name="nutrient_protein">Protein</string>
+    <string name="nutrient_carbs">Carbs</string>
+    <string name="nutrient_fat">Fat</string>
+    <string name="nutrient_iron">Iron</string>
+    <string name="list_quantity">%1$d %2$s</string>
+    <string name="cd_mark_bought">Bought: %1$s</string>
+    <string name="list_estimated_total">Estimated total</string>
+    <string name="list_remaining_budget">Remaining budget</string>
+    <string name="list_budget_used">%1$d%% of %2$s used · demo prices, not market prices</string>
+    <string name="list_edit">Edit list</string>
+    <string name="list_edit_unavailable">Editing isn\'t available yet. It is built in Phase 6.</string>
+    <string name="list_empty_title">No grocery list yet</string>
+    <string name="list_empty_message">Enter your monthly budget on Home to build one.</string>
+    <string name="list_no_matches_title">No items match</string>
+    <string name="list_no_matches_message">Try another search or filter.</string>
 
     <!-- Profile (SCR-09) -->
     <string name="profile_member_since">Member since %1$s</string>
@@ -149,8 +201,6 @@
 
     <!-- Tabs whose features are built in later phases -->
     <string name="upcoming_title">Coming soon</string>
-    <string name="upcoming_list_heading">Grocery list</string>
-    <string name="upcoming_list_message">Your generated grocery list will appear here. This is built in Phase 5.</string>
     <string name="upcoming_nutrition_heading">Nutrition</string>
     <string name="upcoming_nutrition_message">The nutrition analysis of your list will appear here. This is built in Phase 7.</string>
 </resources>

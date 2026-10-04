@@ -36,9 +36,12 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.annotation.Config
 
 // Drives the real navigation graph and screens against the app's own container
+// Runs at the design viewport from the PDF (393 x 832 dp)
 @RunWith(RobolectricTestRunner::class)
+@Config(qualifiers = "w393dp-h832dp-xxhdpi")
 class AppShellNavigationTest {
 
     @get:Rule
@@ -84,7 +87,9 @@ class AppShellNavigationTest {
                 condition()
             }
         } catch (e: ComposeTimeoutException) {
-            throw AssertionError("Timed out waiting for $what; route ${currentRoute()}, stack ${backStackRoutes()}", e)
+            val texts = composeRule.onAllNodes(androidx.compose.ui.test.hasAnyAncestor(androidx.compose.ui.test.isRoot()) or androidx.compose.ui.test.isRoot(), useUnmergedTree = true)
+                .fetchSemanticsNodes().flatMap { it.config.getOrElse(androidx.compose.ui.semantics.SemanticsProperties.Text) { emptyList() } }.joinToString(" | ") { it.text }
+            throw AssertionError("Timed out waiting for $what; route ${currentRoute()}, stack ${backStackRoutes()}; on screen: $texts", e)
         }
     }
 
@@ -231,10 +236,10 @@ class AppShellNavigationTest {
 
         composeRule.onNodeWithText("List").performClick()
         awaitRoute(Routes.LIST)
-        composeRule.onNodeWithText("Coming soon").assertExists()
 
         composeRule.onNodeWithText("Nutrition").performClick()
         awaitRoute(Routes.NUTRITION)
+        composeRule.onNodeWithText("Coming soon").assertExists()
         // Moving between tabs replaces the tab; Home stays underneath as the only other entry
         assertEquals(listOf(Routes.HOME, Routes.NUTRITION), backStackRoutes())
 
@@ -251,15 +256,106 @@ class AppShellNavigationTest {
     }
 
     @Test
-    fun home_generateOnlyExplainsThatItIsNotAvailable() {
+    fun home_generateBuildsAListAndOpensIt() {
         registered(withProfile = true)
         launch()
         awaitRoute(Routes.HOME)
 
         composeRule.onNodeWithText("Generate grocery list").assertIsNotEnabled()
-        composeRule.onNodeWithText("No grocery list yet").assertExists()
-        composeRule.onNodeWithText("Not available yet: list generation is built in Phase 5.").assertExists()
-        assertEquals(Routes.HOME, currentRoute())
+        awaitText("No grocery list yet")
+
+        composeRule.onAllNodes(hasSetTextAction()).onFirst().performTextInput("12000")
+        composeRule.onNodeWithText("Generate grocery list").assertIsEnabled().performClick()
+
+        // The processing screen is its own destination, with no bottom bar
+        awaitRoute(Routes.GENERATE)
+        awaitText("Building your list")
+        composeRule.onNodeWithText("Reading regional prices").assertExists()
+        composeRule.onAllNodesWithText("Profile").assertCountEquals(0)
+
+        // It is replaced by the new list, so back goes to Home
+        awaitRoute(Routes.LIST_DETAIL)
+        assertEquals(listOf(Routes.HOME, Routes.LIST_DETAIL), backStackRoutes())
+        awaitText("Lentils (Masoor)")
+        composeRule.onNodeWithText("Estimated total").assertExists()
+        composeRule.onNodeWithText("Remaining budget").assertExists()
+        composeRule.onNodeWithText("demo prices, not market prices", substring = true).assertExists()
+
+        val list = runBlocking { container.groceryListRepository.latestList() }!!
+        val items = runBlocking { container.groceryListRepository.getItems(list.id) }
+        val total = items.sumOf { it.item.quantity * it.item.unitPrice }
+        assertEquals(12_000, list.budget)
+        assert(total in 1..12_000) { "total $total" }
+
+        // Searching and filtering change what is shown, not the list
+        composeRule.onAllNodes(hasSetTextAction()).onFirst().performTextInput("lentil")
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("Lentils (Masoor)").assertExists()
+        composeRule.onAllNodesWithText("Eggs").assertCountEquals(0)
+        composeRule.onAllNodes(hasSetTextAction()).onFirst().performTextClearance()
+        awaitText("Eggs")
+        composeRule.onNodeWithText("Veg").performClick()
+        awaitText("Potato")
+        composeRule.onAllNodesWithText("Lentils (Masoor)").assertCountEquals(0)
+        composeRule.onNodeWithText("All").performClick()
+        awaitText("Lentils (Masoor)")
+
+        // Ticking an item stores it as bought
+        composeRule.onNodeWithContentDescription("Bought: Lentils (Masoor)").performClick()
+        waitFor("the bought flag") {
+            runBlocking { container.groceryListRepository.getItems(list.id) }
+                .first { it.catalog.name == "Lentils (Masoor)" }.item.bought
+        }
+
+        // Edit list is not built yet and says so
+        composeRule.onNodeWithText("Edit list").performClick()
+        awaitText("Editing isn't available yet. It is built in Phase 6.")
+        assertEquals(Routes.LIST_DETAIL, currentRoute())
+
+        composeRule.runOnUiThread { navController.popBackStack() }
+        awaitRoute(Routes.HOME)
+        assertEquals(listOf(Routes.HOME), backStackRoutes())
+        // Home now shows the list, and the typed budget is still there
+        awaitText("THIS MONTH SO FAR")
+        composeRule.onNodeWithText("View list").assertExists()
+
+        // The List tab shows the same list, as a tab root
+        composeRule.onNodeWithText("List").performClick()
+        awaitRoute(Routes.LIST)
+        awaitText("Lentils (Masoor)")
+        assertEquals(listOf(Routes.HOME, Routes.LIST), backStackRoutes())
+    }
+
+    @Test
+    fun generation_cancelReturnsHomeWithNothingSaved() {
+        registered(withProfile = true)
+        launch()
+        awaitRoute(Routes.HOME)
+        composeRule.onAllNodes(hasSetTextAction()).onFirst().performTextInput("12000")
+        composeRule.onNodeWithText("Generate grocery list").performClick()
+        awaitRoute(Routes.GENERATE)
+        awaitText("Cancel")
+
+        composeRule.onNodeWithText("Cancel").performClick()
+
+        awaitRoute(Routes.HOME)
+        assertEquals(listOf(Routes.HOME), backStackRoutes())
+        Thread.sleep(500)
+        assertNull(runBlocking { container.groceryListRepository.latestList() })
+        awaitText("No grocery list yet")
+    }
+
+    @Test
+    fun listTab_withoutAListSaysSo() {
+        registered(withProfile = true)
+        launch()
+        awaitRoute(Routes.HOME)
+
+        composeRule.onNodeWithText("List").performClick()
+
+        awaitRoute(Routes.LIST)
+        awaitText("Enter your monthly budget on Home to build one.")
+        composeRule.onAllNodesWithText("Edit list").assertCountEquals(0)
     }
 
     @Test

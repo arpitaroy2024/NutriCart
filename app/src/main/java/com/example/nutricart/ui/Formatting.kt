@@ -3,7 +3,11 @@ package com.example.nutricart.ui
 import androidx.annotation.StringRes
 import com.example.nutricart.R
 import com.example.nutricart.data.model.Allergen
+import com.example.nutricart.data.model.FoodCategory
 import com.example.nutricart.data.model.HealthCondition
+import com.example.nutricart.data.model.NutrientTag
+import com.example.nutricart.ui.components.ThousandsVisualTransformation
+import kotlin.math.abs
 
 // Up to two initials for an avatar: "Arpita Roy" -> "AR"
 fun initialsOf(name: String): String =
@@ -11,6 +15,10 @@ fun initialsOf(name: String): String =
         .filter { it.isNotEmpty() }
         .take(2)
         .joinToString("") { it.first().uppercase() }
+
+// An amount in taka with thousands separators: "Tk 10,850", "-Tk 250"
+fun formatTk(amount: Int): String =
+    (if (amount < 0) "-" else "") + "Tk " + ThousandsVisualTransformation.format(abs(amount.toLong()).toString())
 
 // The name used in the greeting: "Arpita Roy" -> "Arpita"
 fun firstNameOf(name: String): String = name.trim().substringBefore(' ')
@@ -58,4 +66,23 @@ fun HealthCondition.labelRes(): Int = when (this) {
     HealthCondition.Thyroid -> R.string.condition_thyroid
     HealthCondition.Anemia -> R.string.condition_anemia
     HealthCondition.Celiac -> R.string.condition_celiac
+}
+
+@StringRes
+fun FoodCategory.labelRes(): Int = when (this) {
+    FoodCategory.Protein -> R.string.category_protein
+    FoodCategory.Grains -> R.string.category_grains
+    FoodCategory.Veg -> R.string.category_veg
+    FoodCategory.Fruit -> R.string.category_fruit
+    FoodCategory.Dairy -> R.string.category_dairy
+    FoodCategory.Oils -> R.string.category_oils
+    FoodCategory.Pantry -> R.string.category_pantry
+}
+
+@StringRes
+fun NutrientTag.labelRes(): Int = when (this) {
+    NutrientTag.Protein -> R.string.nutrient_protein
+    NutrientTag.Carbs -> R.string.nutrient_carbs
+    NutrientTag.Fat -> R.string.nutrient_fat
+    NutrientTag.Iron -> R.string.nutrient_iron
 }

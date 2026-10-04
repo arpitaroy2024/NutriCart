@@ -238,7 +238,7 @@ class ProfileViewModelsTest {
     // Home
 
     private fun homeViewModel(savedState: SavedStateHandle = SavedStateHandle()) =
-        HomeViewModel(env.accounts, env.profiles, savedState)
+        HomeViewModel(env.accounts, env.profiles, env.lists, savedState)
 
     @Test
     fun home_showsTheAccountNameAndHousehold() {
@@ -268,7 +268,7 @@ class ProfileViewModelsTest {
         assertFalse(viewModel.state.value.canGenerate)
 
         viewModel.onGenerate()
-        assertFalse(viewModel.state.value.generationUnavailableNotice)
+        assertNull(viewModel.state.value.generateRequest)
 
         viewModel.onBudgetChange("12000")
         assertTrue(viewModel.state.value.canGenerate)
@@ -286,21 +286,23 @@ class ProfileViewModelsTest {
         viewModel.onBudgetChange("1000000")
         viewModel.onGenerate()
         assertEquals(BudgetError.AboveMaximum, viewModel.state.value.budgetError)
-        assertFalse(viewModel.state.value.generationUnavailableNotice)
+        assertNull(viewModel.state.value.generateRequest)
     }
 
     @Test
-    fun home_validBudgetOnlyRaisesTheNotAvailableNotice() {
+    fun home_validBudgetRequestsGenerationAndStoresNothingItself() {
         val viewModel = homeViewModel()
         viewModel.onBudgetChange("12000")
 
         viewModel.onGenerate()
 
         assertNull(viewModel.state.value.budgetError)
-        assertTrue(viewModel.state.value.generationUnavailableNotice)
-        viewModel.onNoticeShown()
-        assertFalse(viewModel.state.value.generationUnavailableNotice)
-        // Nothing was generated or stored
+        assertEquals(12_000, viewModel.state.value.generateRequest)
+        viewModel.onGenerateHandled()
+        assertNull(viewModel.state.value.generateRequest)
+        // The typed budget stays in the field for the way back
+        assertEquals("12000", viewModel.state.value.budget)
+        // Home writes nothing; the list is saved by the processing screen
         assertNull(runBlocking { env.lists.latestList() })
         assertNull(runBlocking { env.budgets.latest() })
     }

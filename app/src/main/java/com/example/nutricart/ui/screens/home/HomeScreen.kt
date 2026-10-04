@@ -17,8 +17,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,6 +37,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
@@ -53,9 +52,11 @@ import com.example.nutricart.ui.components.EmptyState
 import com.example.nutricart.ui.components.NutriCard
 import com.example.nutricart.ui.components.NutriFilledButton
 import com.example.nutricart.ui.components.NutriTextField
+import com.example.nutricart.ui.components.ProgressRail
 import com.example.nutricart.ui.components.SectionLabel
 import com.example.nutricart.ui.components.ThousandsVisualTransformation
 import com.example.nutricart.ui.firstNameOf
+import com.example.nutricart.ui.formatTk
 import com.example.nutricart.ui.initialsOf
 import com.example.nutricart.ui.theme.NutriCartTheme
 import com.example.nutricart.ui.theme.Sizes
@@ -66,35 +67,28 @@ import java.util.Calendar
 @Composable
 fun HomeScreen(
     onOpenProfile: () -> Unit,
+    onGenerate: (Int) -> Unit,
+    onOpenList: () -> Unit,
     viewModel: HomeViewModel = viewModel(factory = AppViewModelFactory)
 ) {
     val state by viewModel.state.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
-    val notice = stringResource(R.string.home_generate_unavailable)
 
-    LaunchedEffect(state.generationUnavailableNotice) {
-        if (state.generationUnavailableNotice) {
-            viewModel.onNoticeShown()
-            snackbarHostState.showSnackbar(notice)
+    LaunchedEffect(state.generateRequest) {
+        state.generateRequest?.let { budget ->
+            viewModel.onGenerateHandled()
+            onGenerate(budget)
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        HomeContent(
-            state = state,
-            period = remember { DayPeriod.forHour(Calendar.getInstance().get(Calendar.HOUR_OF_DAY)) },
-            onBudgetChange = viewModel::onBudgetChange,
-            onBudgetFocusLost = viewModel::onBudgetFocusLost,
-            onGenerate = viewModel::onGenerate,
-            onOpenProfile = onOpenProfile
-        )
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .imePadding()
-        )
-    }
+    HomeContent(
+        state = state,
+        period = remember { DayPeriod.forHour(Calendar.getInstance().get(Calendar.HOUR_OF_DAY)) },
+        onBudgetChange = viewModel::onBudgetChange,
+        onBudgetFocusLost = viewModel::onBudgetFocusLost,
+        onGenerate = viewModel::onGenerate,
+        onOpenProfile = onOpenProfile,
+        onOpenList = onOpenList
+    )
 }
 
 @Composable
@@ -104,7 +98,8 @@ private fun HomeContent(
     onBudgetChange: (String) -> Unit,
     onBudgetFocusLost: () -> Unit,
     onGenerate: () -> Unit,
-    onOpenProfile: () -> Unit
+    onOpenProfile: () -> Unit,
+    onOpenList: () -> Unit
 ) {
     val colors = NutriCartTheme.colors
     Surface(modifier = Modifier.fillMaxSize(), color = colors.surface) {
@@ -142,13 +137,18 @@ private fun HomeContent(
                 onGenerate = onGenerate
             )
 
-            // Shown in place of the list summary until a list exists
-            NutriCard(modifier = Modifier.fillMaxWidth()) {
-                EmptyState(
-                    title = stringResource(R.string.home_empty_title),
-                    message = stringResource(R.string.home_empty_message),
-                    icon = painterResource(R.drawable.ic_list)
-                )
+            val summary = state.currentList
+            if (summary == null) {
+                // Shown in place of the list summary until a list exists
+                NutriCard(modifier = Modifier.fillMaxWidth()) {
+                    EmptyState(
+                        title = stringResource(R.string.home_empty_title),
+                        message = stringResource(R.string.home_empty_message),
+                        icon = painterResource(R.drawable.ic_list)
+                    )
+                }
+            } else {
+                CurrentListCard(summary = summary, onOpenList = onOpenList)
             }
         }
     }
@@ -237,11 +237,44 @@ private fun BudgetCard(
                 },
                 enabled = state.canGenerate
             )
-            Text(
-                text = stringResource(R.string.home_generate_note),
-                style = NutriCartTheme.typography.caption,
-                color = colors.onSurfaceMuted
-            )
+        }
+    }
+}
+
+// The latest list at a glance. Tapping it opens the List tab.
+@Composable
+private fun CurrentListCard(summary: ListSummary, onOpenList: () -> Unit) {
+    val colors = NutriCartTheme.colors
+    NutriCard(modifier = Modifier.fillMaxWidth(), onClick = onOpenList) {
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+            SectionLabel(text = stringResource(R.string.home_current_list))
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(
+                    text = pluralStringResource(R.plurals.list_item_count, summary.itemCount, summary.itemCount),
+                    modifier = Modifier.weight(1f),
+                    style = NutriCartTheme.typography.titleLarge,
+                    color = colors.onSurface
+                )
+                Text(
+                    text = stringResource(R.string.home_list_total, formatTk(summary.total), formatTk(summary.budget)),
+                    style = NutriCartTheme.typography.caption,
+                    color = colors.onSurfaceMuted
+                )
+            }
+            ProgressRail(progress = summary.usedFraction)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = stringResource(R.string.home_list_used, summary.usedPercent),
+                    modifier = Modifier.weight(1f),
+                    style = NutriCartTheme.typography.caption,
+                    color = colors.onSurfaceMuted
+                )
+                Text(
+                    text = stringResource(R.string.home_view_list),
+                    style = NutriCartTheme.typography.caption.copy(fontWeight = FontWeight.Bold),
+                    color = colors.primary
+                )
+            }
         }
     }
 }
@@ -255,13 +288,15 @@ private fun HomePreview() {
                 accountName = "Name Surname",
                 region = "Rangpur Division",
                 householdSize = 4,
-                budget = "12000"
+                budget = "12000",
+                currentList = ListSummary(itemCount = 23, total = 10941, budget = 12000)
             ),
             period = DayPeriod.Evening,
             onBudgetChange = {},
             onBudgetFocusLost = {},
             onGenerate = {},
-            onOpenProfile = {}
+            onOpenProfile = {},
+            onOpenList = {}
         )
     }
 }

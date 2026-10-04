@@ -5,12 +5,16 @@ import com.example.nutricart.data.model.FoodCategory
 import com.example.nutricart.data.model.HealthCondition
 import com.example.nutricart.data.model.NutrientTag
 import com.example.nutricart.data.model.Regions
+import com.example.nutricart.domain.BasketSlot
 
 // What the catalog tables are filled with on first use. To use a real dataset,
 // provide another CatalogSeed to RoomCatalogRepository.
 interface CatalogSeed {
     val items: List<CatalogItemEntity>
     val prices: List<RegionPriceEntity>
+
+    // The monthly basket the grocery generator fills from these items
+    val basket: List<BasketSlot>
 }
 
 /*
@@ -162,4 +166,49 @@ object DemoCatalogSeed : CatalogSeed {
             )
         }
     }
+
+    /*
+     * DEMO DATA, like the prices above: per-person monthly quantities chosen so the lists look
+     * sensible, not taken from a dietary guideline. The numbers are catalog item ids.
+     */
+    override val basket: List<BasketSlot> = listOf(
+        // Core staples: a grain, pulses, eggs and the two everyday vegetables
+        BasketSlot(1, listOf(2, 1), perPerson = 6.0, upgradeItemId = 1),
+        BasketSlot(1, listOf(5, 6), perPerson = 1.0),
+        BasketSlot(1, listOf(8), perPerson = 12.0),
+        BasketSlot(1, listOf(20), perPerson = 2.0),
+        BasketSlot(1, listOf(21), perPerson = 1.0),
+
+        // Everyday items
+        BasketSlot(2, listOf(33, 34, 36, 37, 35), perPerson = 0.75),
+        BasketSlot(2, listOf(11, 13), perPerson = 1.0),
+        BasketSlot(2, listOf(9), perPerson = 1.0),
+        BasketSlot(2, listOf(3), perPerson = 1.5),
+        BasketSlot(2, listOf(22), perPerson = 1.0),
+        BasketSlot(2, listOf(18, 19), perPerson = 1.0),
+        BasketSlot(2, listOf(31), perPerson = 4.0),
+
+        // Variety
+        BasketSlot(3, listOf(7), perPerson = 0.5),
+        BasketSlot(3, listOf(23), perPerson = 0.75),
+        BasketSlot(3, listOf(24), perPerson = 0.75),
+        BasketSlot(3, listOf(25), perPerson = 0.75),
+        BasketSlot(3, listOf(26), perPerson = 0.75),
+        BasketSlot(3, listOf(27), perPerson = 0.5),
+        BasketSlot(3, listOf(28), perPerson = 12.0),
+        BasketSlot(3, listOf(30), perPerson = 1.0),
+        BasketSlot(3, listOf(29), perPerson = 0.5),
+        BasketSlot(3, listOf(32), perPerson = 0.5),
+        BasketSlot(3, listOf(38), perPerson = 0.4),
+
+        // Extras, bought only when everything above is covered in full
+        BasketSlot(4, listOf(16), perPerson = 0.25),
+        BasketSlot(4, listOf(17), perPerson = 0.25),
+        BasketSlot(4, listOf(4), perPerson = 0.25),
+        BasketSlot(4, listOf(6), perPerson = 0.25),
+        BasketSlot(4, listOf(19), perPerson = 0.5),
+        BasketSlot(4, listOf(10), perPerson = 0.25),
+        BasketSlot(4, listOf(14), perPerson = 0.25),
+        BasketSlot(4, listOf(12), perPerson = 0.25)
+    )
 }

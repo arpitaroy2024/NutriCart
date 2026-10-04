@@ -1,6 +1,6 @@
 # NutriCart — Implementation Plan
 
-Written 2026-10-04. Status: **approved. Phases 0 to 4 complete; Phase 5 not started.** Onboarding panes 2 and 3 use provisional copy that still needs approval (`phase_3_entry_auth.md` section 4). From Phase 4 on, the PDFs are the functional reference and their UI may be improved where justified; each deviation is recorded in the phase document (`phase_4_profile_shell.md` section 10).
+Written 2026-10-04. Status: **approved. Phases 0 to 5 complete; Phase 6 not started.** Onboarding panes 2 and 3 use provisional copy that still needs approval (`phase_3_entry_auth.md` section 4). From Phase 4 on, the PDFs are the functional reference and their UI may be improved where justified; each deviation is recorded in the phase document (`phase_4_profile_shell.md` section 10).
 
 Sources:
 
