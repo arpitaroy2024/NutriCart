@@ -475,23 +475,15 @@ The documentation covers:
 
 ### 🔐 Authentication & Profile
 
-![Login](screenshots/login.png)
-
-![Profile](screenshots/profile.png)
+![Authentication & Profile](screenshots/readme-auth-profile.png)
 
 ### 🛒 Grocery Planning
 
-![Home](screenshots/home.png)
-
-![Grocery List](screenshots/grocery-list.png)
-
-![Edit List](screenshots/edit-list.png)
+![Grocery Planning](screenshots/readme-grocery-planning.png)
 
 ### 📊 Nutrition & Safety
 
-![Nutrition](screenshots/nutrition.png)
-
-![Health & Allergy Review](screenshots/health-review.png)
+![Nutrition & Safety](screenshots/readme-nutrition-safety.png)
 ---
 
 ## 👩‍💻 Author
