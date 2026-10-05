@@ -42,6 +42,13 @@ interface GroceryListRepository {
     // Records "keep anyway" on a flagged item
     suspend fun overrideAlert(itemId: Long)
 
+    // Sets or clears "keep anyway" on one item of one list. It is a note about that item
+    // only: it changes nothing on the profile and nothing about what is flagged.
+    suspend fun setKeptAnyway(itemId: Long, kept: Boolean)
+
+    // Swaps a list item for another catalog item in one step; false if the item is not this account's
+    suspend fun replaceItem(itemId: Long, catalogItemId: Long, quantity: Int, unitPrice: Int): Boolean
+
     // Single edits, saved as they are made
 
     // Adds delta (usually +1 or -1) to an item's quantity, kept within ListRules
@@ -107,8 +114,25 @@ class LocalGroceryListRepository(
         itemDao.setBought(itemId, settings.requireAccountId(), bought)
     }
 
-    override suspend fun overrideAlert(itemId: Long) {
-        itemDao.setAlertOverridden(itemId, settings.requireAccountId())
+    override suspend fun overrideAlert(itemId: Long) = setKeptAnyway(itemId, true)
+
+    override suspend fun setKeptAnyway(itemId: Long, kept: Boolean) {
+        itemDao.setAlertOverridden(itemId, settings.requireAccountId(), kept)
+    }
+
+    override suspend fun replaceItem(itemId: Long, catalogItemId: Long, quantity: Int, unitPrice: Int): Boolean {
+        require(unitPrice > 0) { "A replacement needs a price" }
+        return itemDao.replaceOwned(
+            itemId = itemId,
+            accountId = settings.requireAccountId(),
+            replacement = ListItemEntity(
+                listId = 0,
+                catalogItemId = catalogItemId,
+                quantity = quantity.coerceIn(ListRules.MIN_QUANTITY, ListRules.MAX_QUANTITY),
+                unitPrice = unitPrice
+            ),
+            max = ListRules.MAX_QUANTITY
+        )
     }
 
     override suspend fun changeQuantity(itemId: Long, delta: Int) {

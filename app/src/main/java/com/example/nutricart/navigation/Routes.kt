@@ -41,6 +41,8 @@ object Routes {
 
     fun nutritionDetail(listId: Long) = "nutrition/$listId"
 
+    fun alerts(listId: Long) = "alerts/$listId"
+
     fun forEntry(destination: EntryDestination, storageError: Boolean = false) = when (destination) {
         EntryDestination.Welcome -> welcome(storageError)
         EntryDestination.Login -> LOGIN

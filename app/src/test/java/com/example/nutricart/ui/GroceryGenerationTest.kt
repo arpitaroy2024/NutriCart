@@ -66,7 +66,7 @@ class GroceryGenerationTest {
 
     private fun listScreen(listId: Long? = null): GroceryListViewModel {
         val args = if (listId == null) emptyMap() else mapOf(Routes.ARG_LIST_ID to listId)
-        return GroceryListViewModel(SavedStateHandle(args), env.lists).also { viewModel ->
+        return GroceryListViewModel(SavedStateHandle(args), env.lists, env.profiles).also { viewModel ->
             env.awaitUntil { !viewModel.state.value.loading }
         }
     }
@@ -322,7 +322,9 @@ class GroceryGenerationTest {
 
         saved.forEach { assertEquals(dhaka.getValue(it.catalog.id), it.item.unitPrice) }
         assertTrue(saved.none { Allergen.Eggs in it.catalog.allergens || Allergen.Soy in it.catalog.allergens })
-        assertTrue(saved.none { HealthCondition.Diabetes in it.catalog.flaggedConditions })
+        // For diabetes the documented rule leaves out almost pure carbohydrate (sugar, jaggery) and nothing else
+        assertTrue(saved.none { it.catalog.carbsPer100g >= 90.0 })
+        assertTrue(saved.any { it.catalog.id == 1L || it.catalog.id == 2L })
         // Twenty people: far more lentils than the 4 kg a household of four gets
         assertTrue(saved.first { it.catalog.id == 5L }.item.quantity > 12)
     }

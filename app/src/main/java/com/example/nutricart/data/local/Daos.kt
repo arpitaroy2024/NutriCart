@@ -113,10 +113,10 @@ interface ItemDao {
     suspend fun setBought(itemId: Long, accountId: Long, bought: Boolean): Int
 
     @Query(
-        "UPDATE list_items SET alertOverridden = 1 WHERE id = :itemId " +
+        "UPDATE list_items SET alertOverridden = :kept WHERE id = :itemId " +
             "AND listId IN (SELECT id FROM grocery_lists WHERE accountId = :accountId)"
     )
-    suspend fun setAlertOverridden(itemId: Long, accountId: Long): Int
+    suspend fun setAlertOverridden(itemId: Long, accountId: Long, kept: Boolean): Int
 
     @Query("UPDATE list_items SET quantity = :quantity WHERE id = :itemId AND listId = :listId")
     suspend fun updateQuantity(listId: Long, itemId: Long, quantity: Int)
@@ -169,6 +169,17 @@ interface ItemDao {
             updateQuantity(item.listId, existing.id, minOf(max, existing.quantity + item.quantity))
             true
         }
+    }
+
+    // Takes one item off its list and puts another catalog item on in its place, as one
+    // change. The new row starts unbought and without "keep anyway". False if the item is
+    // not on one of this account's lists.
+    @Transaction
+    suspend fun replaceOwned(itemId: Long, accountId: Long, replacement: ListItemEntity, max: Int): Boolean {
+        val old = getOwned(itemId, accountId) ?: return false
+        deleteOwned(itemId, accountId)
+        addOrIncrease(replacement.copy(listId = old.listId), max)
+        return true
     }
 
     // All edits to one list are written in a single transaction

@@ -1,6 +1,7 @@
 package com.example.nutricart.ui.screens.grocerylist
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -33,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -47,6 +49,8 @@ import com.example.nutricart.data.local.ListItemEntity
 import com.example.nutricart.data.local.ListItemWithCatalog
 import com.example.nutricart.data.model.FoodCategory
 import com.example.nutricart.data.model.NutrientTag
+import com.example.nutricart.domain.conflicts.ItemConflict
+import com.example.nutricart.domain.conflicts.Severity
 import com.example.nutricart.ui.AppViewModelFactory
 import com.example.nutricart.ui.components.EmptyState
 import com.example.nutricart.ui.components.FilterTagChip
@@ -56,6 +60,7 @@ import com.example.nutricart.ui.components.NutriOutlinedButton
 import com.example.nutricart.ui.components.NutriSearchField
 import com.example.nutricart.ui.components.NutriTopBar
 import com.example.nutricart.ui.components.TagChip
+import com.example.nutricart.ui.components.TagTone
 import com.example.nutricart.ui.formatTk
 import com.example.nutricart.ui.labelRes
 import com.example.nutricart.ui.theme.Elevation
@@ -77,6 +82,7 @@ fun GroceryListScreen(
     onBack: (() -> Unit)?,
     onEditList: (Long) -> Unit,
     onOpenNutrition: (Long) -> Unit,
+    onOpenReview: (Long) -> Unit,
     viewModel: GroceryListViewModel = viewModel(factory = AppViewModelFactory)
 ) {
     val state by viewModel.state.collectAsState()
@@ -88,7 +94,8 @@ fun GroceryListScreen(
         onCategorySelected = viewModel::onCategorySelected,
         onBoughtChange = viewModel::onBoughtChange,
         onEditList = { state.list?.let { onEditList(it.id) } },
-        onOpenNutrition = { state.list?.let { onOpenNutrition(it.id) } }
+        onOpenNutrition = { state.list?.let { onOpenNutrition(it.id) } },
+        onOpenReview = { state.list?.let { onOpenReview(it.id) } }
     )
 }
 
@@ -100,7 +107,8 @@ private fun GroceryListContent(
     onCategorySelected: (FoodCategory?) -> Unit,
     onBoughtChange: (Long, Boolean) -> Unit,
     onEditList: () -> Unit,
-    onOpenNutrition: () -> Unit
+    onOpenNutrition: () -> Unit,
+    onOpenReview: () -> Unit
 ) {
     val colors = NutriCartTheme.colors
     Scaffold(
@@ -111,8 +119,15 @@ private fun GroceryListContent(
                 title = stringResource(R.string.list_title),
                 onBack = onBack,
                 actions = {
-                    // The nutrition analysis of this list
+                    // The profile review and the nutrition analysis of this list
                     if (state.list != null) {
+                        IconButton(onClick = onOpenReview) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_alert),
+                                contentDescription = stringResource(R.string.cd_open_review),
+                                modifier = Modifier.size(Sizes.iconNav)
+                            )
+                        }
                         IconButton(onClick = onOpenNutrition) {
                             Icon(
                                 painter = painterResource(R.drawable.ic_chart),
@@ -164,7 +179,8 @@ private fun GroceryListContent(
                     state = state,
                     onQueryChange = onQueryChange,
                     onCategorySelected = onCategorySelected,
-                    onBoughtChange = onBoughtChange
+                    onBoughtChange = onBoughtChange,
+                    onOpenReview = onOpenReview
                 )
             }
         }
@@ -176,7 +192,8 @@ private fun ListBody(
     state: GroceryListUiState,
     onQueryChange: (String) -> Unit,
     onCategorySelected: (FoodCategory?) -> Unit,
-    onBoughtChange: (Long, Boolean) -> Unit
+    onBoughtChange: (Long, Boolean) -> Unit,
+    onOpenReview: () -> Unit
 ) {
     val visible = state.visibleItems
     val listState = rememberLazyListState()
@@ -226,7 +243,12 @@ private fun ListBody(
                 verticalArrangement = Arrangement.spacedBy(Spacing.sm)
             ) {
                 items(visible, key = { it.item.id }) { entry ->
-                    ItemCard(entry = entry, onBoughtChange = { onBoughtChange(entry.item.id, it) })
+                    ItemCard(
+                        entry = entry,
+                        conflict = state.review?.forItem(entry.item.id),
+                        onBoughtChange = { onBoughtChange(entry.item.id, it) },
+                        onOpenReview = onOpenReview
+                    )
                 }
             }
         }
@@ -234,7 +256,13 @@ private fun ListBody(
 }
 
 @Composable
-private fun ItemCard(entry: ListItemWithCatalog, onBoughtChange: (Boolean) -> Unit) {
+private fun ItemCard(
+    entry: ListItemWithCatalog,
+    // What the profile review flags on this item, if anything
+    conflict: ItemConflict?,
+    onBoughtChange: (Boolean) -> Unit,
+    onOpenReview: () -> Unit
+) {
     val colors = NutriCartTheme.colors
     val bought = entry.item.bought
     val checkboxLabel = stringResource(R.string.cd_mark_bought, entry.catalog.name)
@@ -274,6 +302,25 @@ private fun ItemCard(entry: ListItemWithCatalog, onBoughtChange: (Boolean) -> Un
                         style = NutriCartTheme.typography.caption,
                         color = colors.onSurfaceMuted
                     )
+                    // A small marker only; the explanation is on the review screen
+                    if (conflict != null) {
+                        val direct = conflict.severity == Severity.High
+                        TagChip(
+                            text = stringResource(
+                                when {
+                                    conflict.keptAnyway -> R.string.list_badge_kept
+                                    direct -> R.string.review_badge_allergen
+                                    else -> R.string.list_badge_review
+                                }
+                            ),
+                            modifier = Modifier
+                                .padding(top = Spacing.xxs)
+                                .clickable(role = Role.Button, onClick = onOpenReview),
+                            tone = if (direct) TagTone.Allergy else TagTone.Condition,
+                            height = NutrientTagHeight,
+                            uppercase = true
+                        )
+                    }
                 }
                 Column(
                     horizontalAlignment = Alignment.End,
@@ -349,7 +396,8 @@ private fun GroceryListPreview() {
             onCategorySelected = {},
             onBoughtChange = { _, _ -> },
             onEditList = {},
-            onOpenNutrition = {}
+            onOpenNutrition = {},
+            onOpenReview = {}
         )
     }
 }

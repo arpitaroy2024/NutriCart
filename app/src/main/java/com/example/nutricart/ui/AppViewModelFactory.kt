@@ -7,6 +7,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.nutricart.AppContainer
 import com.example.nutricart.NutriCartApp
+import com.example.nutricart.ui.screens.alerts.AlertsViewModel
 import com.example.nutricart.ui.screens.auth.CreateAccountViewModel
 import com.example.nutricart.ui.screens.auth.LoginViewModel
 import com.example.nutricart.ui.screens.editlist.AddItemsViewModel
@@ -46,7 +47,17 @@ val AppViewModelFactory = viewModelFactory {
             container.groceryListRepository
         )
     }
-    initializer { GroceryListViewModel(createSavedStateHandle(), container.groceryListRepository) }
+    initializer {
+        GroceryListViewModel(createSavedStateHandle(), container.groceryListRepository, container.profileRepository)
+    }
+    initializer {
+        AlertsViewModel(
+            createSavedStateHandle(),
+            container.groceryListRepository,
+            container.profileRepository,
+            container.catalogRepository
+        )
+    }
     initializer { EditListViewModel(createSavedStateHandle(), container.groceryListRepository) }
     initializer {
         NutritionViewModel(createSavedStateHandle(), container.groceryListRepository, container.profileRepository)

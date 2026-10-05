@@ -285,4 +285,66 @@
         <item quantity="other">%1$d items could not be counted because they have no nutrition data.</item>
     </plurals>
     <string name="nutrition_disclaimer">A general estimate from demo nutrition data and NutriCart\'s reference values for one adult. It is not medical or dietary advice.</string>
+
+    <!-- Profile review (SCR-08): allergen matches and nutrition considerations.
+         No wording here may call anything safe or unsafe, or give medical advice. -->
+    <string name="review_title">Review your list</string>
+    <string name="cd_open_review">Review list</string>
+    <string name="review_no_list_title">List not found</string>
+    <string name="review_no_list_message">This list is no longer available.</string>
+    <string name="review_profile_empty_title">Nothing to check against</string>
+    <string name="review_profile_empty_message">Your profile lists no allergies or health conditions.</string>
+    <plurals name="review_needs_review">
+        <item quantity="one">%1$d item needs review</item>
+        <item quantity="other">%1$d items need review</item>
+    </plurals>
+    <string name="review_summary_message">Checked against the catalog data for the allergies and conditions on your profile.</string>
+    <string name="review_all_kept_title">Flagged items kept</string>
+    <string name="review_all_kept_message">You chose to keep every flagged item. They are still listed below.</string>
+    <string name="review_none_title">No profile conflicts detected in this list.</string>
+    <string name="review_none_message">Only catalog data is checked. An item without allergen data is not known to be free of anything.</string>
+    <string name="review_section_allergens">Allergen matches</string>
+    <string name="review_section_nutrition">Nutrition considerations</string>
+    <string name="review_section_list">About the whole list</string>
+    <string name="review_section_unchecked">Not checked automatically</string>
+    <string name="review_badge_allergen">Allergen</string>
+    <string name="review_badge_nutrition">Nutrition</string>
+    <plurals name="review_concern_count">
+        <item quantity="one">%1$d concern</item>
+        <item quantity="other">%1$d concerns</item>
+    </plurals>
+    <string name="concern_allergen">Contains %1$s, an allergen listed on your profile.</string>
+    <string name="concern_allergen_custom">Contains %1$s, matched to your entry “%2$s”.</string>
+    <string name="concern_gluten">Contains %1$s. Your profile lists %2$s.</string>
+    <string name="concern_carbohydrate">Higher in carbohydrate (%1$d g per 100 g). May be worth reviewing: your profile lists %2$s.</string>
+    <string name="consideration_carbohydrate_title">Carbohydrate share of energy</string>
+    <string name="consideration_carbohydrate_message">Carbohydrate supplies %1$d%% of this list\'s energy; the reference range ends at %2$d%%. May be worth reviewing: your profile lists %3$s.</string>
+    <string name="consideration_iron_title">Iron in this list</string>
+    <string name="consideration_iron_message">The list holds %1$d%% of the iron reference per person, under the %2$d%% line. Your profile lists %3$s.</string>
+    <string name="review_kept">You chose to keep this item.</string>
+    <string name="review_keep_anyway">Keep anyway</string>
+    <string name="review_review_again">Review again</string>
+    <string name="review_alternatives_label">Suggested alternatives</string>
+    <string name="review_no_alternative">No suitable alternative found.</string>
+    <string name="review_alternative_detail">%1$d %2$s · %3$s</string>
+    <string name="review_replace">Replace</string>
+    <string name="cd_replace_with">Replace with %1$s</string>
+    <string name="review_unchecked_allergies">Typed allergies with no catalog data: %1$s. They stay on your profile but cannot be matched to items.</string>
+    <string name="review_unchecked_conditions">Automated analysis isn\'t available for: %1$s. The catalog has no data that supports a rule for them.</string>
+    <string name="review_unchecked_custom_conditions">Typed conditions are not analysed: %1$s.</string>
+    <string name="review_unchecked_rules">This list has no nutrition figures, so the list-wide checks were not run.</string>
+    <plurals name="review_items_without_data">
+        <item quantity="one">%1$d item has no nutrition data and was not checked against nutrition rules.</item>
+        <item quantity="other">%1$d items have no nutrition data and were not checked against nutrition rules.</item>
+    </plurals>
+    <string name="review_disclaimer">This is general nutrition information from demo catalog data, not medical advice. Check product labels for allergen information.</string>
+    <string name="review_profile_label">Profile review</string>
+    <string name="review_separate_note">Allergies and conditions are checked separately and do not change the score.</string>
+    <string name="review_open">Review list</string>
+    <string name="list_badge_review">Review</string>
+    <string name="list_badge_kept">Kept anyway</string>
+    <plurals name="home_review_count">
+        <item quantity="one">%1$d item to review</item>
+        <item quantity="other">%1$d items to review</item>
+    </plurals>
 </resources>

@@ -9,6 +9,7 @@ import com.example.nutricart.data.repository.ProfileRepository
 import com.example.nutricart.domain.BudgetError
 import com.example.nutricart.domain.BudgetRules
 import com.example.nutricart.domain.nutrition.NutritionAnalyzer
+import com.example.nutricart.ui.screens.alerts.ProfileReview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,7 +27,10 @@ data class ListSummary(
     val total: Int,
     val budget: Int,
     // The list's nutrition balance score, or null when it cannot be worked out
-    val nutritionScore: Int? = null
+    val nutritionScore: Int? = null,
+    val listId: Long = 0,
+    // Items the profile review flags that the user has not chosen to keep
+    val reviewCount: Int = 0
 ) {
     val usedFraction: Float get() = if (budget > 0) total.toFloat() / budget else 0f
     val usedPercent: Int get() = if (budget > 0) (total.toLong() * 100 / budget).toInt() else 0
@@ -92,7 +96,9 @@ class HomeViewModel(
                                 itemCount = items.size,
                                 total = items.sumOf { it.item.quantity * it.item.unitPrice },
                                 budget = list.budget,
-                                nutritionScore = NutritionAnalyzer.analyze(items, profile?.householdSize ?: 0)?.score?.value
+                                nutritionScore = NutritionAnalyzer.analyze(items, profile?.householdSize ?: 0)?.score?.value,
+                                listId = list.id,
+                                reviewCount = ProfileReview.analyze(items, profile)?.needsReview ?: 0
                             )
                         }
                     }

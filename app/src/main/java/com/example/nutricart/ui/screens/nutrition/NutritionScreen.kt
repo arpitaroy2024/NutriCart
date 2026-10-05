@@ -33,6 +33,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.nutricart.R
 import com.example.nutricart.data.local.GroceryListEntity
 import com.example.nutricart.data.model.FoodCategory
+import com.example.nutricart.domain.conflicts.ConflictAnalysis
 import com.example.nutricart.domain.nutrition.Nutrient
 import com.example.nutricart.domain.nutrition.NutritionAnalysis
 import com.example.nutricart.domain.nutrition.NutritionFacts
@@ -91,6 +92,7 @@ private fun amount(value: Double): String = ThousandsVisualTransformation.format
 fun NutritionScreen(
     onBack: (() -> Unit)?,
     onEditList: (Long) -> Unit,
+    onOpenReview: (Long) -> Unit,
     onGoHome: (() -> Unit)?,
     viewModel: NutritionViewModel = viewModel(factory = AppViewModelFactory)
 ) {
@@ -99,6 +101,7 @@ fun NutritionScreen(
         state = state,
         onBack = onBack,
         onEditList = { state.list?.let { onEditList(it.id) } },
+        onOpenReview = { state.list?.let { onOpenReview(it.id) } },
         onGoHome = onGoHome
     )
 }
@@ -108,6 +111,7 @@ private fun NutritionContent(
     state: NutritionUiState,
     onBack: (() -> Unit)?,
     onEditList: () -> Unit,
+    onOpenReview: () -> Unit,
     onGoHome: (() -> Unit)?
 ) {
     val colors = NutriCartTheme.colors
@@ -146,14 +150,26 @@ private fun NutritionContent(
                     modifier = Modifier.align(Alignment.Center),
                     action = { NutriOutlinedButton(text = stringResource(R.string.list_edit), onClick = onEditList) }
                 )
-                else -> Analysis(analysis = analysis, itemCount = state.itemCount, onEditList = onEditList)
+                else -> Analysis(
+                    analysis = analysis,
+                    itemCount = state.itemCount,
+                    review = state.review,
+                    onEditList = onEditList,
+                    onOpenReview = onOpenReview
+                )
             }
         }
     }
 }
 
 @Composable
-private fun Analysis(analysis: NutritionAnalysis, itemCount: Int, onEditList: () -> Unit) {
+private fun Analysis(
+    analysis: NutritionAnalysis,
+    itemCount: Int,
+    review: ConflictAnalysis?,
+    onEditList: () -> Unit,
+    onOpenReview: () -> Unit
+) {
     val colors = NutriCartTheme.colors
     Column(
         modifier = Modifier
@@ -209,6 +225,33 @@ private fun Analysis(analysis: NutritionAnalysis, itemCount: Int, onEditList: ()
                             style = NutriCartTheme.typography.body,
                             color = colors.onSurface
                         )
+                    }
+                }
+            }
+        }
+
+        // A pointer to the profile review. It is a separate analysis and is not part of the score.
+        if (review != null && !review.profileIsEmpty) {
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                SectionLabel(text = stringResource(R.string.review_profile_label))
+                NutriCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                        Text(
+                            text = when {
+                                review.needsReview > 0 ->
+                                    pluralStringResource(R.plurals.review_needs_review, review.needsReview, review.needsReview)
+                                review.items.isNotEmpty() -> stringResource(R.string.review_all_kept_title)
+                                else -> stringResource(R.string.review_none_title)
+                            },
+                            style = NutriCartTheme.typography.body.copy(fontWeight = FontWeight.Bold),
+                            color = colors.onSurface
+                        )
+                        Text(
+                            text = stringResource(R.string.review_separate_note),
+                            style = NutriCartTheme.typography.caption,
+                            color = colors.onSurfaceMuted
+                        )
+                        NutriOutlinedButton(text = stringResource(R.string.review_open), onClick = onOpenReview)
                     }
                 }
             }
@@ -416,6 +459,7 @@ private fun NutritionPreview() {
             ),
             onBack = null,
             onEditList = {},
+            onOpenReview = {},
             onGoHome = {}
         )
     }

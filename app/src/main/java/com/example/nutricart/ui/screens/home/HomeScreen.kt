@@ -69,6 +69,7 @@ fun HomeScreen(
     onOpenProfile: () -> Unit,
     onGenerate: (Int) -> Unit,
     onOpenList: () -> Unit,
+    onOpenReview: (Long) -> Unit,
     viewModel: HomeViewModel = viewModel(factory = AppViewModelFactory)
 ) {
     val state by viewModel.state.collectAsState()
@@ -87,7 +88,8 @@ fun HomeScreen(
         onBudgetFocusLost = viewModel::onBudgetFocusLost,
         onGenerate = viewModel::onGenerate,
         onOpenProfile = onOpenProfile,
-        onOpenList = onOpenList
+        onOpenList = onOpenList,
+        onOpenReview = onOpenReview
     )
 }
 
@@ -99,7 +101,8 @@ private fun HomeContent(
     onBudgetFocusLost: () -> Unit,
     onGenerate: () -> Unit,
     onOpenProfile: () -> Unit,
-    onOpenList: () -> Unit
+    onOpenList: () -> Unit,
+    onOpenReview: (Long) -> Unit
 ) {
     val colors = NutriCartTheme.colors
     Surface(modifier = Modifier.fillMaxSize(), color = colors.surface) {
@@ -148,7 +151,11 @@ private fun HomeContent(
                     )
                 }
             } else {
-                CurrentListCard(summary = summary, onOpenList = onOpenList)
+                CurrentListCard(
+                    summary = summary,
+                    onOpenList = onOpenList,
+                    onOpenReview = { onOpenReview(summary.listId) }
+                )
             }
         }
     }
@@ -243,7 +250,7 @@ private fun BudgetCard(
 
 // The latest list at a glance. Tapping it opens the List tab.
 @Composable
-private fun CurrentListCard(summary: ListSummary, onOpenList: () -> Unit) {
+private fun CurrentListCard(summary: ListSummary, onOpenList: () -> Unit, onOpenReview: () -> Unit) {
     val colors = NutriCartTheme.colors
     NutriCard(modifier = Modifier.fillMaxWidth(), onClick = onOpenList) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
@@ -267,6 +274,15 @@ private fun CurrentListCard(summary: ListSummary, onOpenList: () -> Unit) {
                     text = stringResource(R.string.home_nutrition_score, summary.nutritionScore),
                     style = NutriCartTheme.typography.caption,
                     color = colors.onSurfaceMuted
+                )
+            }
+            // Shown only when something is waiting; opens the review, not the list
+            if (summary.reviewCount > 0) {
+                Text(
+                    text = pluralStringResource(R.plurals.home_review_count, summary.reviewCount, summary.reviewCount),
+                    modifier = Modifier.clickable(role = Role.Button, onClick = onOpenReview),
+                    style = NutriCartTheme.typography.caption.copy(fontWeight = FontWeight.Bold),
+                    color = colors.warning
                 )
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -303,7 +319,8 @@ private fun HomePreview() {
             onBudgetFocusLost = {},
             onGenerate = {},
             onOpenProfile = {},
-            onOpenList = {}
+            onOpenList = {},
+            onOpenReview = {}
         )
     }
 }

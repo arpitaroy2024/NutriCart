@@ -6,9 +6,11 @@ import androidx.lifecycle.viewModelScope
 import com.example.nutricart.data.local.GroceryListEntity
 import com.example.nutricart.data.repository.GroceryListRepository
 import com.example.nutricart.data.repository.ProfileRepository
+import com.example.nutricart.domain.conflicts.ConflictAnalysis
 import com.example.nutricart.domain.nutrition.NutritionAnalysis
 import com.example.nutricart.domain.nutrition.NutritionAnalyzer
 import com.example.nutricart.navigation.Routes
+import com.example.nutricart.ui.screens.alerts.ProfileReview
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -27,7 +29,9 @@ data class NutritionUiState(
     val list: GroceryListEntity? = null,
     val itemCount: Int = 0,
     // Null when the list has nothing that can be analysed; never a made-up zero score
-    val analysis: NutritionAnalysis? = null
+    val analysis: NutritionAnalysis? = null,
+    // The separate profile review of the same list; it never changes the figures above
+    val review: ConflictAnalysis? = null
 )
 
 // SCR-07. Analyses one list: the one named in the route, or the account's latest when
@@ -60,7 +64,8 @@ class NutritionViewModel(
                                 loading = false,
                                 list = list,
                                 itemCount = items.size,
-                                analysis = NutritionAnalyzer.analyze(items, profile?.householdSize ?: 0)
+                                analysis = NutritionAnalyzer.analyze(items, profile?.householdSize ?: 0),
+                                review = ProfileReview.analyze(items, profile)
                             )
                         }
                     }

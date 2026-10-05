@@ -70,7 +70,7 @@ class ListEditingTest {
             env.awaitUntil { !viewModel.state.value.loading }
         }
 
-    private fun listScreen(id: Long = listId) = GroceryListViewModel(args(id), env.lists).also { viewModel ->
+    private fun listScreen(id: Long = listId) = GroceryListViewModel(args(id), env.lists, env.profiles).also { viewModel ->
         env.awaitUntil { !viewModel.state.value.loading }
     }
 

@@ -7,15 +7,18 @@ import com.example.nutricart.data.local.GroceryListEntity
 import com.example.nutricart.data.local.ListItemWithCatalog
 import com.example.nutricart.data.model.FoodCategory
 import com.example.nutricart.data.repository.GroceryListRepository
+import com.example.nutricart.data.repository.ProfileRepository
 import com.example.nutricart.domain.ListTotals
+import com.example.nutricart.domain.conflicts.ConflictAnalysis
 import com.example.nutricart.navigation.Routes
+import com.example.nutricart.ui.screens.alerts.ProfileReview
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -24,6 +27,8 @@ data class GroceryListUiState(
     // Null once loaded means the account has no list (or not this one)
     val list: GroceryListEntity? = null,
     val items: List<ListItemWithCatalog> = emptyList(),
+    // What the profile review flags on this list; null without a profile
+    val review: ConflictAnalysis? = null,
     val query: String = "",
     // Null is "All"
     val category: FoodCategory? = null
@@ -56,8 +61,15 @@ data class GroceryListUiState(
 @OptIn(ExperimentalCoroutinesApi::class)
 class GroceryListViewModel(
     savedState: SavedStateHandle,
-    private val lists: GroceryListRepository
+    private val lists: GroceryListRepository,
+    private val profiles: ProfileRepository
 ) : ViewModel() {
+
+    private class Loaded(
+        val list: GroceryListEntity?,
+        val items: List<ListItemWithCatalog> = emptyList(),
+        val review: ConflictAnalysis? = null
+    )
 
     private val listId: Long? = savedState[Routes.ARG_LIST_ID]
 
@@ -69,10 +81,19 @@ class GroceryListViewModel(
         viewModelScope.launch {
             listFlow
                 .flatMapLatest { list ->
-                    if (list == null) flowOf(null to emptyList()) else lists.observeItems(list.id).map { list to it }
+                    if (list == null) {
+                        flowOf(Loaded(null))
+                    } else {
+                        // Recomputed from the current items and profile on every change
+                        combine(lists.observeItems(list.id), profiles.observe()) { items, profile ->
+                            Loaded(list, items, ProfileReview.analyze(items, profile))
+                        }
+                    }
                 }
-                .collect { (list, items) ->
-                    _state.update { it.copy(loading = false, list = list, items = items) }
+                .collect { loaded ->
+                    _state.update {
+                        it.copy(loading = false, list = loaded.list, items = loaded.items, review = loaded.review)
+                    }
                 }
         }
     }

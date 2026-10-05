@@ -529,6 +529,142 @@ class AppShellNavigationTest {
     }
 
     @Test
+    fun review_keepAnywayAndReplaceFromHome() {
+        // The profile lists a peanut allergy and diabetes
+        registered(withProfile = true)
+        val listId = runBlocking {
+            container.catalogRepository.items()
+            container.groceryListRepository.createList(
+                5_000, listOf(NewListItem(2, 20, 75), NewListItem(5, 4, 160), NewListItem(17, 2, 180))
+            )
+        }
+        fun catalogIds() = runBlocking { container.groceryListRepository.getItems(listId) }.map { it.catalog.id }
+
+        launch()
+        awaitRoute(Routes.HOME)
+        awaitText("1 item to review")
+        composeRule.onNodeWithText("1 item to review").performClick()
+        awaitRoute(Routes.ALERTS)
+        assertEquals(listId, navController.currentBackStackEntry?.arguments?.getLong(Routes.ARG_LIST_ID))
+
+        // A pushed screen: no bottom bar, one card for the one flagged item
+        awaitText("1 item needs review")
+        composeRule.onAllNodesWithText("Profile").assertCountEquals(0)
+        composeRule.onNodeWithText("ALLERGEN MATCHES").assertExists()
+        composeRule.onNodeWithText("Peanuts").assertExists()
+        composeRule.onNodeWithText("Contains Peanut, an allergen listed on your profile.").assertExists()
+        composeRule.onNodeWithText("Mung dal").performScrollTo().assertExists()
+        composeRule.onNodeWithText("2 kg · Tk 340").performScrollTo().assertExists()
+        // Rice and lentils are not flagged
+        composeRule.onAllNodesWithText("White rice (Miniket)").assertCountEquals(0)
+        composeRule.onAllNodesWithText("NUTRITION CONSIDERATIONS").assertCountEquals(0)
+        composeRule.onAllNodesWithText("No profile conflicts detected in this list.").assertCountEquals(0)
+        composeRule.onNodeWithText("not medical advice", substring = true).performScrollTo().assertExists()
+
+        // Keep anyway: the item and its explanation stay, only the prompt goes
+        composeRule.onNodeWithText("Keep anyway").performScrollTo().performClick()
+        awaitText("You chose to keep this item.")
+        composeRule.onNodeWithText("Flagged items kept").performScrollTo().assertExists()
+        composeRule.onNodeWithText("Contains Peanut, an allergen listed on your profile.").assertExists()
+        assertEquals(listOf(2L, 5L, 17L), catalogIds())
+
+        composeRule.onNodeWithText("Review again").performScrollTo().performClick()
+        awaitText("Keep anyway")
+
+        // Replace with the first suggested alternative
+        composeRule.onNodeWithContentDescription("Replace with Mung dal").performScrollTo().performClick()
+        waitFor("peanuts to be replaced") { catalogIds() == listOf(2L, 5L, 6L) }
+        awaitText("No profile conflicts detected in this list.")
+        composeRule.onAllNodesWithText("ALLERGEN MATCHES").assertCountEquals(0)
+
+        composeRule.runOnUiThread { navController.popBackStack() }
+        awaitRoute(Routes.HOME)
+        assertEquals(listOf(Routes.HOME), backStackRoutes())
+        waitFor("the review line to go") {
+            composeRule.onAllNodesWithText("1 item to review").fetchSemanticsNodes().isEmpty()
+        }
+    }
+
+    @Test
+    fun review_isReachableFromTheListAndNutritionAndFollowsEdits() {
+        registered(withProfile = true)
+        val listId = runBlocking {
+            container.catalogRepository.items()
+            container.groceryListRepository.createList(5_000, listOf(NewListItem(2, 20, 75), NewListItem(5, 4, 160)))
+        }
+        fun items() = runBlocking { container.groceryListRepository.getItems(listId) }
+
+        launch()
+        awaitRoute(Routes.HOME)
+        awaitText("2 items")
+        // Nothing flagged: no review line on Home, no marker on the list
+        composeRule.onAllNodesWithText("1 item to review").assertCountEquals(0)
+        composeRule.onNodeWithText("List").performClick()
+        awaitRoute(Routes.LIST)
+        awaitText("Lentils (Masoor)")
+        composeRule.onAllNodesWithText("ALLERGEN").assertCountEquals(0)
+
+        // The review is still reachable, and says what it found and what it could not check
+        composeRule.onNodeWithContentDescription("Review list").performClick()
+        awaitRoute(Routes.ALERTS)
+        awaitText("No profile conflicts detected in this list.")
+        composeRule.onAllNodesWithText("Keep anyway").assertCountEquals(0)
+        composeRule.runOnUiThread { navController.popBackStack() }
+        awaitRoute(Routes.LIST)
+
+        // Add peanuts in the editor
+        composeRule.onNodeWithText("Edit list").performClick()
+        awaitRoute(Routes.LIST_EDIT)
+        awaitText("Lentils (Masoor)")
+        composeRule.onNodeWithText("Add item").performClick()
+        awaitRoute(Routes.LIST_ADD)
+        awaitText("Search groceries")
+        composeRule.onAllNodes(hasSetTextAction()).onFirst().performTextInput("peanuts")
+        waitFor("the search to narrow") {
+            composeRule.onAllNodesWithText("Lentils (Masoor)").fetchSemanticsNodes().isEmpty()
+        }
+        composeRule.onNodeWithContentDescription("Add Peanuts").performClick()
+        waitFor("peanuts to be added") { items().any { it.catalog.id == 17L } }
+        composeRule.runOnUiThread { navController.popBackStack() }
+        awaitRoute(Routes.LIST_EDIT)
+        composeRule.runOnUiThread { navController.popBackStack() }
+        awaitRoute(Routes.LIST)
+
+        // The list marks the item; the marker opens the review of this list
+        awaitText("ALLERGEN")
+        composeRule.onNodeWithText("ALLERGEN").performScrollTo().performClick()
+        awaitRoute(Routes.ALERTS)
+        assertEquals(listId, navController.currentBackStackEntry?.arguments?.getLong(Routes.ARG_LIST_ID))
+        awaitText("1 item needs review")
+        composeRule.onNodeWithText("Contains Peanut, an allergen listed on your profile.").assertExists()
+        composeRule.runOnUiThread { navController.popBackStack() }
+        awaitRoute(Routes.LIST)
+
+        // Nutrition keeps its score and points to the review
+        composeRule.onNodeWithText("Nutrition").performClick()
+        awaitRoute(Routes.NUTRITION)
+        awaitText("OUT OF 100")
+        composeRule.onNodeWithText("PROFILE REVIEW").performScrollTo().assertExists()
+        composeRule.onNodeWithText("1 item needs review").performScrollTo().assertExists()
+        composeRule.onNodeWithText("Review list").performScrollTo().performClick()
+        awaitRoute(Routes.ALERTS)
+        awaitText("ALLERGEN MATCHES")
+        composeRule.runOnUiThread { navController.popBackStack() }
+        awaitRoute(Routes.NUTRITION)
+
+        // Remove the item: the warning goes everywhere
+        runBlocking {
+            container.groceryListRepository.removeItem(items().first { it.catalog.id == 17L }.item.id)
+        }
+        awaitText("No profile conflicts detected in this list.")
+        composeRule.onNodeWithText("Home").performClick()
+        awaitRoute(Routes.HOME)
+        awaitText("2 items")
+        composeRule.onAllNodesWithText("1 item to review").assertCountEquals(0)
+        assertEquals(listOf(Routes.HOME), backStackRoutes())
+    }
+
+    @Test
     fun generation_cancelReturnsHomeWithNothingSaved() {
         registered(withProfile = true)
         launch()

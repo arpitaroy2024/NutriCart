@@ -281,13 +281,75 @@ class GroceryGeneratorTest {
     }
 
     @Test
-    fun itemsFlaggedForAListedCondition_areNotChosen() {
+    fun itemsAConditionRuleFlags_areNotChosen() {
         val list = success(request(budget = 12_000, conditions = setOf(HealthCondition.Diabetes)))
 
-        // White rice and sugar are flagged for diabetes; brown rice fills the grain slot
-        assertEquals(0, list.quantityOf(2))
+        // Sugar is almost pure carbohydrate, which the documented rule flags
         assertEquals(0, list.quantityOf(38))
-        assertTrue(list.quantityOf(1) > 0)
+        // White rice carries a demo "Diabetes" tag but no rule flags it, so it is no longer swapped out
+        assertTrue(list.quantityOf(2) > 0)
+        assertEquals(0, list.quantityOf(1))
+    }
+
+    @Test
+    fun conditionsSharingARule_areTreatedAlike() {
+        for (budget in listOf(3_000, 12_000, 200_000)) {
+            assertEquals(
+                success(request(budget = budget, conditions = setOf(HealthCondition.Diabetes))).items,
+                success(request(budget = budget, conditions = setOf(HealthCondition.Prediabetes))).items
+            )
+        }
+        assertEquals(0, success(request(budget = 200_000, conditions = setOf(HealthCondition.Prediabetes))).quantityOf(38))
+    }
+
+    @Test
+    fun celiacDisease_leavesOutItemsStatedToContainGluten() {
+        val list = success(request(budget = 200_000, conditions = setOf(HealthCondition.Celiac)))
+
+        assertEquals(0, list.quantityOf(3))
+        assertEquals(0, list.quantityOf(4))
+        // The same items a listed gluten allergy leaves out
+        assertEquals(success(request(budget = 200_000, allergies = setOf(Allergen.Gluten))).items, list.items)
+        // Anemia's only rule is about the whole list, so it leaves the basket alone
+        assertEquals(
+            success(request(budget = 200_000)).items,
+            success(request(budget = 200_000, conditions = setOf(HealthCondition.Anemia))).items
+        )
+    }
+
+    @Test
+    fun conditionsWithoutARule_changeNothing() {
+        val unsupported = setOf(
+            HealthCondition.Hypertension, HealthCondition.HighCholesterol, HealthCondition.HeartDisease,
+            HealthCondition.KidneyDisease, HealthCondition.LiverDisease, HealthCondition.Pcos, HealthCondition.Thyroid
+        )
+        // A basket that also asks for the two items carrying a demo "Hypertension" tag
+        val template = DemoCatalogSeed.basket +
+            listOf(BasketSlot(1, listOf(15), perPerson = 0.5), BasketSlot(1, listOf(40), perPerson = 0.5))
+
+        for (budget in listOf(3_000, 12_000, 200_000)) {
+            val plain = success(request(budget = budget, template = template))
+            assertEquals(plain.items, success(request(budget = budget, template = template, conditions = unsupported)).items)
+            unsupported.forEach {
+                assertEquals(plain.items, success(request(budget = budget, template = template, conditions = setOf(it))).items)
+            }
+        }
+        val list = success(request(budget = 200_000, template = template, conditions = setOf(HealthCondition.Hypertension)))
+        assertTrue(list.quantityOf(15) > 0)
+        assertTrue(list.quantityOf(40) > 0)
+    }
+
+    @Test
+    fun catalogConditionTags_doNotAffectGeneration() {
+        val everyTag = catalog.map { it.copy(flaggedConditions = HealthCondition.entries.toSet()) }
+        val noTags = catalog.map { it.copy(flaggedConditions = emptySet()) }
+        val conditions = HealthCondition.entries.toSet()
+
+        for (budget in listOf(3_000, 12_000, 200_000)) {
+            val expected = success(request(budget = budget, conditions = conditions)).items
+            assertEquals(expected, success(request(budget = budget, catalog = everyTag, conditions = conditions)).items)
+            assertEquals(expected, success(request(budget = budget, catalog = noTags, conditions = conditions)).items)
+        }
     }
 
     @Test

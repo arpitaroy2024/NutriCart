@@ -137,7 +137,8 @@ data class CatalogItemEntity(
     val fatPer100g: Double,
     val ironMgPer100g: Double,
     val allergens: Set<Allergen>,
-    // Health conditions this item is flagged for
+    // Hand-set demo tags with no nutrition figure behind them. Stored, but read by nothing:
+    // neither generation nor the profile review treats them as evidence.
     val flaggedConditions: Set<HealthCondition>
 )
 

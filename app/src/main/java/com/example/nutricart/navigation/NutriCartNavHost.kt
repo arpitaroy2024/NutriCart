@@ -21,6 +21,7 @@ import androidx.navigation.navArgument
 import com.example.nutricart.R
 import com.example.nutricart.ui.components.BottomNavTab
 import com.example.nutricart.ui.components.NutriBottomNav
+import com.example.nutricart.ui.screens.alerts.AlertsScreen
 import com.example.nutricart.ui.screens.auth.CreateAccountScreen
 import com.example.nutricart.ui.screens.auth.LoginScreen
 import com.example.nutricart.ui.screens.editlist.AddItemsScreen
@@ -69,6 +70,7 @@ fun NutriCartNavHost(navController: NavHostController = rememberNavController())
 
     val openEditor: (Long) -> Unit = { listId -> navController.navigate(Routes.listEdit(listId)) }
     val openNutrition: (Long) -> Unit = { listId -> navController.navigate(Routes.nutritionDetail(listId)) }
+    val openReview: (Long) -> Unit = { listId -> navController.navigate(Routes.alerts(listId)) }
 
     // The bottom bar lives outside the NavHost so it stays put while tabs change
     Scaffold(
@@ -170,12 +172,18 @@ fun NutriCartNavHost(navController: NavHostController = rememberNavController())
                 HomeScreen(
                     onOpenProfile = { openTab(BottomNavTab.Profile) },
                     onGenerate = { budget -> navController.navigate(Routes.generate(budget)) },
-                    onOpenList = { openTab(BottomNavTab.GroceryList) }
+                    onOpenList = { openTab(BottomNavTab.GroceryList) },
+                    onOpenReview = openReview
                 )
             }
             // The List tab: the account's latest list
             composable(Routes.LIST) {
-                GroceryListScreen(onBack = null, onEditList = openEditor, onOpenNutrition = openNutrition)
+                GroceryListScreen(
+                    onBack = null,
+                    onEditList = openEditor,
+                    onOpenNutrition = openNutrition,
+                    onOpenReview = openReview
+                )
             }
 
             // Generation is a destination of its own, so it survives rotation. It is removed
@@ -205,7 +213,8 @@ fun NutriCartNavHost(navController: NavHostController = rememberNavController())
                 GroceryListScreen(
                     onBack = { navController.popBackStack() },
                     onEditList = openEditor,
-                    onOpenNutrition = openNutrition
+                    onOpenNutrition = openNutrition,
+                    onOpenReview = openReview
                 )
             }
 
@@ -230,6 +239,7 @@ fun NutriCartNavHost(navController: NavHostController = rememberNavController())
                 NutritionScreen(
                     onBack = null,
                     onEditList = openEditor,
+                    onOpenReview = openReview,
                     onGoHome = { openTab(BottomNavTab.Home) }
                 )
             }
@@ -241,8 +251,16 @@ fun NutriCartNavHost(navController: NavHostController = rememberNavController())
                 NutritionScreen(
                     onBack = { navController.popBackStack() },
                     onEditList = openEditor,
+                    onOpenReview = openReview,
                     onGoHome = null
                 )
+            }
+            // The profile review of one list: allergen matches and nutrition considerations
+            composable(
+                route = Routes.ALERTS,
+                arguments = listOf(navArgument(Routes.ARG_LIST_ID) { type = NavType.LongType })
+            ) {
+                AlertsScreen(onBack = { navController.popBackStack() })
             }
             composable(Routes.PROFILE) {
                 ProfileScreen(
