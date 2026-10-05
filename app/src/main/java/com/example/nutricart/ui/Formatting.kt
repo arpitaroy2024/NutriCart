@@ -8,6 +8,7 @@ import com.example.nutricart.data.model.HealthCondition
 import com.example.nutricart.data.model.NutrientTag
 import com.example.nutricart.ui.components.ThousandsVisualTransformation
 import kotlin.math.abs
+import java.util.Calendar
 
 // Up to two initials for an avatar: "Arpita Roy" -> "AR"
 fun initialsOf(name: String): String =
@@ -26,15 +27,20 @@ fun firstNameOf(name: String): String = name.trim().substringBefore(' ')
 enum class DayPeriod(@param:StringRes val greetingRes: Int) {
     Morning(R.string.greeting_morning),
     Afternoon(R.string.greeting_afternoon),
-    Evening(R.string.greeting_evening);
+    Evening(R.string.greeting_evening),
+    Night(R.string.greeting_night);
 
     companion object {
-        // hour is 0..23
+        // hour is 0..23. Morning 5 to 11, afternoon 12 to 16, evening 17 to 20, night 21 to 4.
         fun forHour(hour: Int): DayPeriod = when (hour) {
             in 5..11 -> Morning
             in 12..16 -> Afternoon
-            else -> Evening
+            in 17..20 -> Evening
+            else -> Night
         }
+
+        // The period right now, by the device's own clock and time zone
+        fun now(): DayPeriod = forHour(Calendar.getInstance().get(Calendar.HOUR_OF_DAY))
     }
 }
 

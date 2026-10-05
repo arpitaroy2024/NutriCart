@@ -42,6 +42,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.nutricart.R
 import com.example.nutricart.domain.BudgetError
@@ -61,7 +62,6 @@ import com.example.nutricart.ui.initialsOf
 import com.example.nutricart.ui.theme.NutriCartTheme
 import com.example.nutricart.ui.theme.Sizes
 import com.example.nutricart.ui.theme.Spacing
-import java.util.Calendar
 
 // SCR-04. A bottom-navigation root: the bar is drawn by the nav host, below this content.
 @Composable
@@ -81,9 +81,17 @@ fun HomeScreen(
         }
     }
 
+    // Read again each time the screen comes back to the foreground, so a greeting worked out
+    // hours ago is not still showing
+    var period by remember { mutableStateOf(DayPeriod.now()) }
+    LifecycleResumeEffect(Unit) {
+        period = DayPeriod.now()
+        onPauseOrDispose {}
+    }
+
     HomeContent(
         state = state,
-        period = remember { DayPeriod.forHour(Calendar.getInstance().get(Calendar.HOUR_OF_DAY)) },
+        period = period,
         onBudgetChange = viewModel::onBudgetChange,
         onBudgetFocusLost = viewModel::onBudgetFocusLost,
         onGenerate = viewModel::onGenerate,

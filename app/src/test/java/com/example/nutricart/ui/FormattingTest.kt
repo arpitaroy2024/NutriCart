@@ -7,6 +7,7 @@ import com.example.nutricart.ui.components.BottomNavTab
 import com.example.nutricart.ui.components.ThousandsVisualTransformation
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class FormattingTest {
@@ -28,14 +29,37 @@ class FormattingTest {
 
     @Test
     fun dayPeriod_followsTheClock() {
-        assertEquals(DayPeriod.Evening, DayPeriod.forHour(0))
-        assertEquals(DayPeriod.Evening, DayPeriod.forHour(4))
+        // Night runs from 9 PM through 4:59 AM
+        (0..4).forEach { assertEquals("hour $it", DayPeriod.Night, DayPeriod.forHour(it)) }
+        (5..11).forEach { assertEquals("hour $it", DayPeriod.Morning, DayPeriod.forHour(it)) }
+        (12..16).forEach { assertEquals("hour $it", DayPeriod.Afternoon, DayPeriod.forHour(it)) }
+        (17..20).forEach { assertEquals("hour $it", DayPeriod.Evening, DayPeriod.forHour(it)) }
+        (21..23).forEach { assertEquals("hour $it", DayPeriod.Night, DayPeriod.forHour(it)) }
+    }
+
+    @Test
+    fun dayPeriod_changesExactlyAtTheBoundaryHours() {
+        assertEquals(DayPeriod.Night, DayPeriod.forHour(4))
         assertEquals(DayPeriod.Morning, DayPeriod.forHour(5))
         assertEquals(DayPeriod.Morning, DayPeriod.forHour(11))
         assertEquals(DayPeriod.Afternoon, DayPeriod.forHour(12))
         assertEquals(DayPeriod.Afternoon, DayPeriod.forHour(16))
         assertEquals(DayPeriod.Evening, DayPeriod.forHour(17))
-        assertEquals(DayPeriod.Evening, DayPeriod.forHour(23))
+        assertEquals(DayPeriod.Evening, DayPeriod.forHour(20))
+        assertEquals(DayPeriod.Night, DayPeriod.forHour(21))
+    }
+
+    @Test
+    fun dayPeriod_nowUsesTheDevicesLocalHour() {
+        val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+        val now = DayPeriod.now()
+        // Either the hour read here or, if the hour just turned, the next one
+        assertTrue(now == DayPeriod.forHour(hour) || now == DayPeriod.forHour((hour + 1) % 24))
+    }
+
+    @Test
+    fun dayPeriod_eachHasItsOwnGreeting() {
+        assertEquals(4, DayPeriod.entries.map { it.greetingRes }.toSet().size)
     }
 
     @Test
