@@ -1,104 +1,283 @@
-# NutriCart
+# 🥗 NutriCart
 
-NutriCart is an Android application designed to help users plan groceries and make more informed food and nutrition decisions based on their personal preferences, household information, budget, allergies, and health-related considerations.
+> **A smart, offline-first grocery planning and nutrition companion built with Kotlin and Jetpack Compose.**
 
-The project is being developed as a local-first Android application with a focus on a clean, accessible, and practical user experience.
+NutriCart helps users build personalized grocery lists based on their **household size, budget, region, allergies, and health conditions**, then edit those lists and analyze their nutritional balance.
 
-## 🚧 Development Status
+The application is designed as a **fully local/offline Android app**, with no backend, Firebase, or network dependency.
 
-> **Status: Active Development**
+---
 
-NutriCart is being developed in multiple implementation phases.
+## ✨ Highlights
 
-### Progress
+* 🛒 **Personalized grocery generation**
+* 💰 **Budget-aware shopping lists**
+* 👨‍👩‍👧‍👦 **Household-size personalization**
+* 🌍 **Region-aware pricing**
+* ✏️ **Fully editable grocery lists**
+* 📊 **Nutrition analysis and scoring**
+* ⚠️ **Allergy conflict detection**
+* 🩺 **Conservative health-condition analysis**
+* 🔄 **Real-time list updates**
+* 🔐 **Local account isolation**
+* 📱 **Offline-first architecture**
+* 🧪 **Comprehensive automated testing**
 
-- [x] Phase 0 — Project Foundation
-- [ ] Phase 1 — Design System & Reusable Components
-- [ ] Phase 2 — Local Storage
-- [ ] Phase 3 — Authentication & Onboarding
-- [ ] Phase 4 — Profile & Home
-- [ ] Phase 5 — Grocery Generation
-- [ ] Phase 6 — Grocery List Editing
-- [ ] Phase 7 — Nutrition Analysis
-- [ ] Phase 8 — Allergy & Health Alerts
-- [ ] Phase 9 — Polish & Final Testing
+---
 
-## ✨ Planned Features
+## 📱 What NutriCart Does
 
-- Personalized grocery planning
-- Budget-aware grocery recommendations
-- Grocery list generation and management
-- Grocery item details
-- Nutrition analysis
-- Allergy and health alerts
-- Personalized user profiles
-- Local/offline account management
-- Household and dietary preferences
-- Bangladesh-focused grocery data and pricing
-- AI-inspired grocery recommendations using an on-device rule-based approach
+NutriCart follows a simple workflow:
 
-## 🛠️ Tech Stack
+```text
+Create Account
+      ↓
+Complete Profile
+      ↓
+Set Region, Household, Allergies & Health Conditions
+      ↓
+Set Grocery Budget
+      ↓
+Generate Personalized Grocery List
+      ↓
+Edit Quantities / Add / Remove / Mark Items
+      ↓
+Analyze Nutrition
+      ↓
+Review Allergy & Health-Condition Conflicts
+```
 
-- **Kotlin**
-- **Jetpack Compose**
-- **Material 3**
-- **Android SDK**
-- **Gradle**
-- **Android Studio**
-- **Room** — planned local database
-- **DataStore** — planned local preferences/session storage
+The application keeps grocery data, profile information, authentication data, and analysis state locally on the device.
+
+---
+
+## 🎯 Core Features
+
+### 🛒 Personalized Grocery Generation
+
+NutriCart generates a deterministic grocery basket using:
+
+* Household size
+* Grocery budget
+* Selected region
+* Available catalog items
+* Regional prices
+* Profile allergies
+* Supported health-condition rules
+
+The generator prioritizes essential food coverage before optional variety and never intentionally generates a basket above the selected budget.
+
+---
+
+### ✏️ Grocery List Editing
+
+Generated lists remain completely editable.
+
+Users can:
+
+* Increase or decrease quantities
+* Remove items
+* Undo removals
+* Search the grocery catalog
+* Add additional items
+* Mark items as bought
+* Add duplicate items without creating duplicate rows
+* Continue editing even when the list exceeds the budget
+
+Changes are persisted locally.
+
+---
+
+### 📊 Nutrition Analysis
+
+NutriCart analyzes the current grocery list using the actual quantities in the list.
+
+The nutrition engine calculates available values for:
+
+* Calories
+* Protein
+* Carbohydrates
+* Fat
+* Iron
+
+Nutrition analysis is based on the available catalog data and household size.
+
+The app provides:
+
+* Overall nutrition score
+* Nutrition balance visualization
+* Macronutrient information
+* Food-group variety
+* Largest nutritional gap
+* Highlights and observations
+
+> **Important:** NutriCart's nutrition score is a product heuristic for general informational use. It is not a clinical or medical assessment.
+
+---
+
+### ⚠️ Allergy & Health-Condition Intelligence
+
+NutriCart provides conservative rule-based conflict detection.
+
+#### Allergy handling
+
+The system uses explicit catalog allergen metadata rather than guessing from item names.
+
+Supported predefined allergy groups include:
+
+* Milk / Dairy
+* Egg
+* Fish
+* Shellfish
+* Chicken / Poultry
+* Beef
+* Soy
+* Peanut
+* Tree Nuts
+* Wheat / Gluten
+* Sesame
+
+Custom allergy entries can also be stored, while automated matching is only performed where documented mappings exist.
+
+#### Health-condition handling
+
+The current rule engine supports condition-specific analysis only where the available nutrition/catalog data provides a reasonable basis.
+
+Examples include:
+
+* Diabetes
+* Prediabetes
+* Celiac Disease
+* Anemia
+
+Other supported profile conditions may be stored but can intentionally show that automated condition-specific analysis is unavailable when sufficient data/rules are not present.
+
+This conservative approach avoids inventing medical recommendations.
+
+> NutriCart is **not a medical diagnosis or treatment application**.
+
+---
+
+## 🔐 Privacy & Offline-First Design
+
+NutriCart does not require:
+
+* Firebase
+* A remote backend
+* Cloud authentication
+* Internet access
+* External API calls
+
+Authentication is handled locally.
+
+Passwords are not stored as plaintext. NutriCart uses salted password hashing for local authentication.
+
+User data is isolated by account at the repository/database layer.
+
+---
 
 ## 🏗️ Architecture
 
-NutriCart is being developed with a local-first architecture.
+NutriCart follows a layered architecture designed to keep UI, business logic, and persistence separate.
 
-The planned application structure separates:
+```text
+┌───────────────────────────────┐
+│          Jetpack Compose      │
+│              UI               │
+└───────────────┬───────────────┘
+                │
+                ▼
+┌───────────────────────────────┐
+│        ViewModels             │
+│   UI State & User Actions     │
+└───────────────┬───────────────┘
+                │
+                ▼
+┌───────────────────────────────┐
+│       Domain Layer             │
+│                               │
+│ Grocery Generator             │
+│ Nutrition Calculator          │
+│ Nutrition Scorer              │
+│ Nutrition Insights            │
+│ Profile Conflict Rules        │
+└───────────────┬───────────────┘
+                │
+                ▼
+┌───────────────────────────────┐
+│       Repository Layer        │
+└───────────────┬───────────────┘
+                │
+                ▼
+┌───────────────────────────────┐
+│       Local Persistence       │
+│                               │
+│ Room Database                 │
+│ DataStore                     │
+└───────────────────────────────┘
+```
 
-- UI and reusable Compose components
-- Navigation
-- Local data storage
-- Authentication
-- Domain/business logic
-- Nutrition and recommendation logic
+Business logic such as grocery generation and nutrition analysis is kept independent from the Compose UI wherever practical.
 
-The application does not depend on Firebase or a remote backend for its core account and grocery functionality.
+This also makes the project easier to test and extend.
 
-## 🔐 Authentication & Privacy
+---
 
-NutriCart is planned to support local/offline accounts.
+## 🧠 Rule-Based Intelligence
 
-The planned authentication flow includes:
+NutriCart intentionally uses **deterministic, explainable rules** rather than an external AI/LLM service.
 
-- Local account registration
-- Email and password login
-- Local session persistence
-- Account-specific grocery lists and budgets
-- Logout
-- Password hashing rather than storing plaintext passwords
+For example:
 
-No Firebase or external authentication service is planned for the core implementation.
+```text
+User Profile
+     │
+     ├── Allergies
+     │       ↓
+     │   Catalog Allergen Metadata
+     │
+     └── Health Conditions
+             ↓
+       Supported Rules
+             ↓
+       Conflict Analysis
+             ↓
+       User Review
+```
 
-## 📱 Platform
+The same documented conflict rules are used during grocery generation and later profile review to keep the two experiences consistent.
 
-**Android**
+When reliable data is unavailable, NutriCart avoids making a condition-specific claim.
 
-The application is built using Jetpack Compose rather than XML-based layouts.
+---
 
-## 📚 Project Documentation
+## 🧰 Technology Stack
 
-The `project_docs/` directory contains the project's design and implementation documentation, including:
+| Technology          | Purpose                                     |
+| ------------------- | ------------------------------------------- |
+| **Kotlin**          | Primary programming language                |
+| **Jetpack Compose** | Declarative UI                              |
+| **Material 3**      | UI components and design system             |
+| **Room**            | Local relational database                   |
+| **DataStore**       | Lightweight local preferences/session state |
+| **KSP**             | Kotlin code generation                      |
+| **Gradle**          | Build system                                |
+| **JUnit**           | Unit testing                                |
+| **Robolectric**     | JVM Android testing                         |
+| **AndroidX Test**   | Android testing infrastructure              |
+| **Git / GitHub**    | Version control                             |
 
-- NutriCart screen specifications
-- UI flow documentation
-- Implementation plan
-- Phase-specific implementation documentation
+### Project Configuration
 
-The two primary design documents are:
+* Kotlin: `2.2.10`
+* Android Gradle Plugin: `9.3.1`
+* Gradle: `9.5.0`
+* Java: `11`
+* Minimum SDK: `24`
+* Target SDK: `37`
+* Compile SDK: `37`
 
-- `406_NutriCart_Screen_Details.pdf`
-- `406_NutriCart_UI_Flow.pdf`
-
-These documents define the intended screens, UI behavior, navigation, dimensions, and design requirements.
+---
 
 ## 📂 Project Structure
 
@@ -106,12 +285,225 @@ These documents define the intended screens, UI behavior, navigation, dimensions
 NutriCart/
 ├── app/
 │   └── src/
-├── gradle/
+│       ├── main/
+│       │   ├── java/com/example/nutricart/
+│       │   │   ├── data/
+│       │   │   ├── domain/
+│       │   │   ├── navigation/
+│       │   │   ├── ui/
+│       │   │   └── ...
+│       │   └── res/
+│       │
+│       └── test/
+│
 ├── project_docs/
+│   ├── implementation_plan.md
+│   ├── phase_1_design_system.md
+│   ├── phase_2_local_storage.md
+│   ├── phase_3_entry_auth.md
+│   ├── phase_4_profile_shell.md
+│   ├── phase_5_grocery_generation.md
+│   ├── phase_6_grocery_editing.md
+│   ├── phase_7_nutrition.md
+│   └── phase_8_allergy_health.md
+│
 ├── CLAUDE.md
-├── build.gradle.kts
-├── settings.gradle.kts
-├── gradlew
-├── gradlew.bat
-└── README.md
+├── README.md
+└── ...
 ```
+
+---
+
+## 🧪 Testing
+
+NutriCart has an automated test suite covering:
+
+* Authentication
+* Registration
+* Session persistence
+* Account isolation
+* Profile persistence
+* Database migrations
+* Grocery generation
+* Grocery list editing
+* Quantity changes
+* Duplicate item handling
+* Nutrition calculations
+* Nutrition scoring
+* Allergy matching
+* Health-condition rules
+* Conflict consistency
+* Navigation
+* Empty states
+
+### Latest verification
+
+```text
+Tests:        377
+Failures:     0
+Skipped:      0
+Lint errors:  0
+```
+
+The project was also manually tested on a physical Android device.
+
+---
+
+## 🚀 Getting Started
+
+### Requirements
+
+* Android Studio
+* JDK 11
+* Android SDK 37
+* Git
+
+### Clone the repository
+
+```bash
+git clone https://github.com/arpitaroy2024/NutriCart.git
+cd NutriCart
+```
+
+### Build
+
+On Windows:
+
+```powershell
+.\gradlew.bat assembleDebug
+```
+
+### Run tests
+
+```powershell
+.\gradlew.bat testDebugUnitTest
+```
+
+### Run lint
+
+```powershell
+.\gradlew.bat lintDebug
+```
+
+You can then open the project in Android Studio and run the `app` configuration on an Android device or emulator.
+
+---
+
+## 📋 Development Phases
+
+NutriCart was developed incrementally to keep functionality, persistence, testing, and documentation aligned.
+
+| Phase   | Focus                                     | Status     |
+| ------- | ----------------------------------------- | ---------- |
+| Phase 0 | Project foundation & navigation           | ✅ Complete |
+| Phase 1 | Design system & reusable components       | ✅ Complete |
+| Phase 2 | Local storage & authentication foundation | ✅ Complete |
+| Phase 3 | Onboarding & authentication flow          | ✅ Complete |
+| Phase 4 | Profile, app shell & user preferences     | ✅ Complete |
+| Phase 5 | Grocery generation                        | ✅ Complete |
+| Phase 6 | Grocery list editing                      | ✅ Complete |
+| Phase 7 | Nutrition analysis                        | ✅ Complete |
+| Phase 8 | Allergy & health-condition intelligence   | ✅ Complete |
+
+---
+
+## 🎨 Design Philosophy
+
+NutriCart's UI is built around:
+
+* Clear information hierarchy
+* Reusable Compose components
+* Consistent spacing and typography
+* Accessible interaction patterns
+* Simple grocery workflows
+* Visual feedback for important states
+* Explainable nutrition and conflict information
+
+The project requirements and reference designs guide functionality and flow, while the implementation is allowed to improve usability and visual design rather than reproducing reference screens blindly.
+
+---
+
+## ⚠️ Current Limitations
+
+NutriCart intentionally has some limitations:
+
+* Nutrition analysis depends on the nutrition data available in the local catalog.
+* Some health conditions do not currently have enough data for automated condition-specific analysis.
+* Custom health conditions do not automatically generate medical rules.
+* Custom allergy matching is limited to documented mappings.
+* Regional prices are local/demo catalog data rather than live market prices.
+* The application does not provide clinical medical advice.
+* No cloud synchronization is currently implemented.
+
+These limitations are intentional where reliable data or safe domain rules are not available.
+
+---
+
+## 🔮 Future Possibilities
+
+The current architecture leaves room for future improvements such as:
+
+* Expanded nutrition datasets
+* More region-specific catalog data
+* Additional validated health-condition rules
+* Improved visual design and accessibility
+* Cloud synchronization
+* More advanced recommendation systems
+
+These are **not required for the current implementation**.
+
+---
+
+## 📚 Documentation
+
+Detailed implementation documentation is available in the [`project_docs`](./project_docs) directory.
+
+The documentation covers:
+
+* Architecture decisions
+* Database design
+* Authentication
+* UI/UX decisions
+* Grocery-generation logic
+* List-editing behavior
+* Nutrition calculations
+* Allergy and health-condition rules
+* Testing strategy
+* Phase-by-phase implementation decisions
+---
+## 📱 App Screenshots
+
+### 🔐 Authentication & Profile
+
+![Login](screenshots/login.png)
+
+![Profile](screenshots/profile.png)
+
+### 🛒 Grocery Planning
+
+![Home](screenshots/home.png)
+
+![Grocery List](screenshots/grocery-list.png)
+
+![Edit List](screenshots/edit-list.png)
+
+### 📊 Nutrition & Safety
+
+![Nutrition](screenshots/nutrition.png)
+
+![Health & Allergy Review](screenshots/health-review.png)
+---
+
+## 👩‍💻 Author
+
+**Arpita Roy**
+
+Computer Science & Engineering student and developer focused on building practical software with modern Android technologies.
+
+---
+
+## 📄 License
+
+This project is currently provided for **educational and portfolio purposes**.
+
+Add or replace this section with the project's chosen open-source license if the repository is later released under one.
