@@ -262,6 +262,13 @@ private fun CurrentListCard(summary: ListSummary, onOpenList: () -> Unit) {
                 )
             }
             ProgressRail(progress = summary.usedFraction)
+            if (summary.nutritionScore != null) {
+                Text(
+                    text = stringResource(R.string.home_nutrition_score, summary.nutritionScore),
+                    style = NutriCartTheme.typography.caption,
+                    color = colors.onSurfaceMuted
+                )
+            }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = stringResource(R.string.home_list_used, summary.usedPercent),

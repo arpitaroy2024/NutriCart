@@ -233,8 +233,56 @@
     <string name="logout_title">Log out?</string>
     <string name="logout_message">You\'ll be logged out. Your account, profile and grocery history stay on this device.</string>
 
-    <!-- Tabs whose features are built in later phases -->
-    <string name="upcoming_title">Coming soon</string>
-    <string name="upcoming_nutrition_heading">Nutrition</string>
-    <string name="upcoming_nutrition_message">The nutrition analysis of your list will appear here. This is built in Phase 7.</string>
+    <!-- Nutrition (SCR-07). General nutrition only: no medical or allergy wording here. -->
+    <string name="nutrition_title">Nutrition</string>
+    <string name="cd_open_nutrition">Nutrition analysis</string>
+    <string name="home_nutrition_score">Nutrition balance %1$d / 100</string>
+    <string name="nutrition_no_list_title">No list to analyse yet</string>
+    <string name="nutrition_no_list_message">Your nutrition overview will appear after you generate a grocery list.</string>
+    <string name="nutrition_go_home">Go to Home</string>
+    <string name="nutrition_nothing_title">Nothing to analyse</string>
+    <string name="nutrition_nothing_message">This list is empty, or its items have no nutrition data.</string>
+    <string name="nutrition_score_title">Nutrition balance</string>
+    <string name="nutrition_out_of_100">out of 100</string>
+    <string name="nutrition_band_excellent">Very good balance</string>
+    <string name="nutrition_band_good">Good balance</string>
+    <string name="nutrition_band_fair">Fair balance</string>
+    <string name="nutrition_band_low">Low balance</string>
+    <string name="nutrition_gaps_none">No gaps against the reference</string>
+    <plurals name="nutrition_gap_count">
+        <item quantity="one">With %1$d gap against the reference</item>
+        <item quantity="other">With %1$d gaps against the reference</item>
+    </plurals>
+    <string name="nutrition_basis">Based on your current grocery list: %1$s, shared by %2$s over a %3$d-day period</string>
+    <string name="nutrition_gap_title">%1$s is %2$d%% below the reference</string>
+    <string name="nutrition_gap_message">It is the lowest of the five nutrients tracked.</string>
+    <string name="nutrition_no_gaps_title">No major gaps</string>
+    <string name="nutrition_no_gaps_message">Every tracked nutrient is at 60% of the reference or more.</string>
+    <string name="nutrition_per_person_label">Per person, per day</string>
+    <string name="nutrition_energy">Calories</string>
+    <string name="nutrition_protein">Protein</string>
+    <string name="nutrition_carbohydrate">Carbohydrate</string>
+    <string name="nutrition_fat">Fat</string>
+    <string name="nutrition_iron">Iron</string>
+    <string name="unit_kcal">kcal</string>
+    <string name="unit_g">g</string>
+    <string name="unit_mg">mg</string>
+    <string name="nutrition_amount_of_reference">%1$s of %2$s %3$s</string>
+    <string name="nutrition_variety_label">Food variety</string>
+    <string name="nutrition_variety_count">Food groups on the list: %1$d of %2$d</string>
+    <string name="nutrition_variety_missing">Not on the list: %1$s</string>
+    <string name="nutrition_highlights_label">Highlights</string>
+    <string name="insight_variety_all">All five food groups are on the list.</string>
+    <string name="insight_variety_some">Food groups covered: %1$d of %2$d. Missing: %3$s.</string>
+    <string name="insight_grains_dominant">Grains supply %1$d%% of the list\'s energy.</string>
+    <string name="insight_oils_and_sugar">Oils and pantry items supply %1$d%% of the list\'s energy.</string>
+    <string name="insight_macro_above">%1$s supplies %2$d%% of the energy, above the %3$d–%4$d%% reference range.</string>
+    <string name="insight_macro_below">%1$s supplies %2$d%% of the energy, below the %3$d–%4$d%% reference range.</string>
+    <string name="insight_protein_covered">Protein is well covered: %1$d%% of the reference.</string>
+    <string name="insight_energy_above">The list holds %1$d%% of the energy reference for the period.</string>
+    <plurals name="insight_items_not_counted">
+        <item quantity="one">%1$d item could not be counted because it has no nutrition data.</item>
+        <item quantity="other">%1$d items could not be counted because they have no nutrition data.</item>
+    </plurals>
+    <string name="nutrition_disclaimer">A general estimate from demo nutrition data and NutriCart\'s reference values for one adult. It is not medical or dietary advice.</string>
 </resources>

@@ -8,6 +8,7 @@ import com.example.nutricart.data.repository.GroceryListRepository
 import com.example.nutricart.data.repository.ProfileRepository
 import com.example.nutricart.domain.BudgetError
 import com.example.nutricart.domain.BudgetRules
+import com.example.nutricart.domain.nutrition.NutritionAnalyzer
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,13 +16,18 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 // What Home shows about the account's latest list. Nutrition score and alert count are
 // added with the phases that compute them.
-data class ListSummary(val itemCount: Int, val total: Int, val budget: Int) {
+data class ListSummary(
+    val itemCount: Int,
+    val total: Int,
+    val budget: Int,
+    // The list's nutrition balance score, or null when it cannot be worked out
+    val nutritionScore: Int? = null
+) {
     val usedFraction: Float get() = if (budget > 0) total.toFloat() / budget else 0f
     val usedPercent: Int get() = if (budget > 0) (total.toLong() * 100 / budget).toInt() else 0
 }
@@ -81,11 +87,12 @@ class HomeViewModel(
                     if (list == null) {
                         flowOf(null)
                     } else {
-                        lists.observeItems(list.id).map { items ->
+                        combine(lists.observeItems(list.id), profiles.observe()) { items, profile ->
                             ListSummary(
                                 itemCount = items.size,
                                 total = items.sumOf { it.item.quantity * it.item.unitPrice },
-                                budget = list.budget
+                                budget = list.budget,
+                                nutritionScore = NutritionAnalyzer.analyze(items, profile?.householdSize ?: 0)?.score?.value
                             )
                         }
                     }

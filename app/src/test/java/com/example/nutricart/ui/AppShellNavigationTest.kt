@@ -23,6 +23,7 @@ import com.example.nutricart.NutriCartApp
 import com.example.nutricart.data.model.Allergen
 import com.example.nutricart.data.model.HealthCondition
 import com.example.nutricart.data.repository.NewListItem
+import com.example.nutricart.domain.nutrition.NutritionAnalyzer
 import com.example.nutricart.navigation.NutriCartNavHost
 import com.example.nutricart.navigation.Routes
 import com.example.nutricart.ui.theme.NutriCartTheme
@@ -240,7 +241,9 @@ class AppShellNavigationTest {
 
         composeRule.onNodeWithText("Nutrition").performClick()
         awaitRoute(Routes.NUTRITION)
-        composeRule.onNodeWithText("Coming soon").assertExists()
+        // No list yet for this account: an explanation, not a score
+        awaitText("Your nutrition overview will appear after you generate a grocery list.")
+        composeRule.onAllNodesWithText("OUT OF 100").assertCountEquals(0)
         // Moving between tabs replaces the tab; Home stays underneath as the only other entry
         assertEquals(listOf(Routes.HOME, Routes.NUTRITION), backStackRoutes())
 
@@ -431,6 +434,98 @@ class AppShellNavigationTest {
         composeRule.onNodeWithText("Add groceries").performClick()
         awaitRoute(Routes.LIST_ADD)
         assertEquals(listId, navController.currentBackStackEntry?.arguments?.getLong(Routes.ARG_LIST_ID))
+    }
+
+    @Test
+    fun nutrition_showsTheCurrentListAndFollowsEdits() {
+        registered(withProfile = true)
+        val listId = runBlocking {
+            container.catalogRepository.items()
+            // White rice 20 kg, lentils 4 kg, chicken 2 kg for the profile's four people
+            container.groceryListRepository.createList(
+                5_000, listOf(NewListItem(2, 20, 75), NewListItem(5, 4, 160), NewListItem(9, 2, 200))
+            )
+        }
+        fun score() = NutritionAnalyzer.analyze(
+            runBlocking { container.groceryListRepository.getItems(listId) }, 4
+        )!!.score.value
+
+        launch()
+        awaitRoute(Routes.HOME)
+        val first = score()
+        awaitText("Nutrition balance $first / 100")
+
+        // The Nutrition tab, with the bottom bar
+        composeRule.onNodeWithText("Nutrition").performClick()
+        awaitRoute(Routes.NUTRITION)
+        awaitText("OUT OF 100")
+        composeRule.onNodeWithText(first.toString()).assertExists()
+        composeRule.onNodeWithText("PER PERSON, PER DAY").assertExists()
+        listOf("Calories", "Protein", "Carbohydrate", "Fat", "Iron").forEach {
+            // "Protein" is also the name of a food group further down
+            composeRule.onAllNodesWithText(it).onFirst().performScrollTo().assertExists()
+        }
+        // 91,420 kcal over 4 people and 30 days
+        composeRule.onNodeWithText("762 of 2,000 kcal").performScrollTo().assertExists()
+        composeRule.onNodeWithText("Food groups on the list: 2 of 5").performScrollTo().assertExists()
+        composeRule.onNodeWithText("Not on the list: Veg, Fruit, Dairy").performScrollTo().assertExists()
+        composeRule.onNodeWithText("not medical or dietary advice", substring = true).performScrollTo().assertExists()
+
+        // Edit from here: the editor opens for this list
+        composeRule.onNodeWithText("Edit list").performScrollTo().performClick()
+        awaitRoute(Routes.LIST_EDIT)
+        assertEquals(listId, navController.currentBackStackEntry?.arguments?.getLong(Routes.ARG_LIST_ID))
+        awaitText("Chicken (Broiler)")
+        composeRule.onNodeWithContentDescription("Increase Chicken (Broiler)").performClick()
+        composeRule.onNodeWithText("Add item").performClick()
+        awaitRoute(Routes.LIST_ADD)
+        awaitText("Search groceries")
+        composeRule.onAllNodes(hasSetTextAction()).onFirst().performTextInput("spinach")
+        awaitText("Spinach (Palong)")
+        composeRule.onNodeWithContentDescription("Add Spinach (Palong)").performClick()
+        waitFor("spinach to be added") {
+            runBlocking { container.groceryListRepository.getItems(listId) }.size == 4
+        }
+
+        // Back on the Nutrition screen the figures have moved without regenerating anything
+        composeRule.runOnUiThread { navController.popBackStack() }
+        awaitRoute(Routes.LIST_EDIT)
+        composeRule.runOnUiThread { navController.popBackStack() }
+        awaitRoute(Routes.NUTRITION)
+        awaitText("Food groups on the list: 3 of 5")
+        // 2,150 kcal more chicken and 230 kcal of spinach: 93,800 kcal
+        composeRule.onNodeWithText("782 of 2,000 kcal").performScrollTo().assertExists()
+        assert(score() != first) { "the score should have changed" }
+        composeRule.onNodeWithText(score().toString()).performScrollTo().assertExists()
+
+        // The same analysis is reachable from the list itself, as a pushed screen
+        composeRule.onNodeWithText("List").performClick()
+        awaitRoute(Routes.LIST)
+        awaitText("Edit list")
+        composeRule.onNodeWithContentDescription("Nutrition analysis").performClick()
+        awaitRoute(Routes.NUTRITION_DETAIL)
+        assertEquals(listId, navController.currentBackStackEntry?.arguments?.getLong(Routes.ARG_LIST_ID))
+        awaitText("Food groups on the list: 3 of 5")
+        composeRule.onAllNodesWithText("Profile").assertCountEquals(0)
+        composeRule.runOnUiThread { navController.popBackStack() }
+        awaitRoute(Routes.LIST)
+        assertEquals(listOf(Routes.HOME, Routes.LIST), backStackRoutes())
+    }
+
+    @Test
+    fun nutrition_withoutAListOffersTheWayToMakeOne() {
+        registered(withProfile = true)
+        launch()
+        awaitRoute(Routes.HOME)
+
+        composeRule.onNodeWithText("Nutrition").performClick()
+        awaitRoute(Routes.NUTRITION)
+        awaitText("No list to analyse yet")
+        composeRule.onAllNodesWithText("OUT OF 100").assertCountEquals(0)
+
+        composeRule.onNodeWithText("Go to Home").performClick()
+        awaitRoute(Routes.HOME)
+        assertEquals(listOf(Routes.HOME), backStackRoutes())
     }
 
     @Test

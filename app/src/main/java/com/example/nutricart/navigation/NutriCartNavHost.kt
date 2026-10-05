@@ -28,11 +28,11 @@ import com.example.nutricart.ui.screens.editlist.EditListScreen
 import com.example.nutricart.ui.screens.generate.GenerateScreen
 import com.example.nutricart.ui.screens.grocerylist.GroceryListScreen
 import com.example.nutricart.ui.screens.home.HomeScreen
+import com.example.nutricart.ui.screens.nutrition.NutritionScreen
 import com.example.nutricart.ui.screens.onboarding.OnboardingScreen
 import com.example.nutricart.ui.screens.profile.ProfileScreen
 import com.example.nutricart.ui.screens.profilesetup.ProfileSetupScreen
 import com.example.nutricart.ui.screens.splash.SplashScreen
-import com.example.nutricart.ui.screens.upcoming.UpcomingScreen
 import com.example.nutricart.ui.theme.NutriCartTheme
 
 private const val FADE_MS = 200
@@ -68,6 +68,7 @@ fun NutriCartNavHost(navController: NavHostController = rememberNavController())
     }
 
     val openEditor: (Long) -> Unit = { listId -> navController.navigate(Routes.listEdit(listId)) }
+    val openNutrition: (Long) -> Unit = { listId -> navController.navigate(Routes.nutritionDetail(listId)) }
 
     // The bottom bar lives outside the NavHost so it stays put while tabs change
     Scaffold(
@@ -174,7 +175,7 @@ fun NutriCartNavHost(navController: NavHostController = rememberNavController())
             }
             // The List tab: the account's latest list
             composable(Routes.LIST) {
-                GroceryListScreen(onBack = null, onEditList = openEditor)
+                GroceryListScreen(onBack = null, onEditList = openEditor, onOpenNutrition = openNutrition)
             }
 
             // Generation is a destination of its own, so it survives rotation. It is removed
@@ -201,7 +202,11 @@ fun NutriCartNavHost(navController: NavHostController = rememberNavController())
                 route = Routes.LIST_DETAIL,
                 arguments = listOf(navArgument(Routes.ARG_LIST_ID) { type = NavType.LongType })
             ) {
-                GroceryListScreen(onBack = { navController.popBackStack() }, onEditList = openEditor)
+                GroceryListScreen(
+                    onBack = { navController.popBackStack() },
+                    onEditList = openEditor,
+                    onOpenNutrition = openNutrition
+                )
             }
 
             // The editor and its item picker always work on the list named in the route
@@ -220,11 +225,23 @@ fun NutriCartNavHost(navController: NavHostController = rememberNavController())
             ) {
                 AddItemsScreen(onBack = { navController.popBackStack() })
             }
+            // The Nutrition tab: analysis of the account's latest list
             composable(Routes.NUTRITION) {
-                UpcomingScreen(
-                    titleRes = R.string.upcoming_nutrition_heading,
-                    messageRes = R.string.upcoming_nutrition_message,
-                    iconRes = R.drawable.ic_chart
+                NutritionScreen(
+                    onBack = null,
+                    onEditList = openEditor,
+                    onGoHome = { openTab(BottomNavTab.Home) }
+                )
+            }
+            // The same screen for one named list, opened from that list
+            composable(
+                route = Routes.NUTRITION_DETAIL,
+                arguments = listOf(navArgument(Routes.ARG_LIST_ID) { type = NavType.LongType })
+            ) {
+                NutritionScreen(
+                    onBack = { navController.popBackStack() },
+                    onEditList = openEditor,
+                    onGoHome = null
                 )
             }
             composable(Routes.PROFILE) {

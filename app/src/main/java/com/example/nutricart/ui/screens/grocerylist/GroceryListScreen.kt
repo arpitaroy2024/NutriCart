@@ -12,12 +12,15 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -58,6 +61,7 @@ import com.example.nutricart.ui.labelRes
 import com.example.nutricart.ui.theme.Elevation
 import com.example.nutricart.ui.theme.NutriCartShapes
 import com.example.nutricart.ui.theme.NutriCartTheme
+import com.example.nutricart.ui.theme.Sizes
 import com.example.nutricart.ui.theme.Spacing
 
 private val ItemCardMinHeight = 76.dp
@@ -72,6 +76,7 @@ private const val BoughtAlpha = 0.5f
 fun GroceryListScreen(
     onBack: (() -> Unit)?,
     onEditList: (Long) -> Unit,
+    onOpenNutrition: (Long) -> Unit,
     viewModel: GroceryListViewModel = viewModel(factory = AppViewModelFactory)
 ) {
     val state by viewModel.state.collectAsState()
@@ -82,7 +87,8 @@ fun GroceryListScreen(
         onQueryChange = viewModel::onQueryChange,
         onCategorySelected = viewModel::onCategorySelected,
         onBoughtChange = viewModel::onBoughtChange,
-        onEditList = { state.list?.let { onEditList(it.id) } }
+        onEditList = { state.list?.let { onEditList(it.id) } },
+        onOpenNutrition = { state.list?.let { onOpenNutrition(it.id) } }
     )
 }
 
@@ -93,13 +99,31 @@ private fun GroceryListContent(
     onQueryChange: (String) -> Unit,
     onCategorySelected: (FoodCategory?) -> Unit,
     onBoughtChange: (Long, Boolean) -> Unit,
-    onEditList: () -> Unit
+    onEditList: () -> Unit,
+    onOpenNutrition: () -> Unit
 ) {
     val colors = NutriCartTheme.colors
     Scaffold(
         containerColor = colors.surface,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        topBar = { NutriTopBar(title = stringResource(R.string.list_title), onBack = onBack) },
+        topBar = {
+            NutriTopBar(
+                title = stringResource(R.string.list_title),
+                onBack = onBack,
+                actions = {
+                    // The nutrition analysis of this list
+                    if (state.list != null) {
+                        IconButton(onClick = onOpenNutrition) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_chart),
+                                contentDescription = stringResource(R.string.cd_open_nutrition),
+                                modifier = Modifier.size(Sizes.iconNav)
+                            )
+                        }
+                    }
+                }
+            )
+        },
         bottomBar = {
             if (state.list != null) {
                 SummaryBar(state = state, onEditList = onEditList)
@@ -324,7 +348,8 @@ private fun GroceryListPreview() {
             onQueryChange = {},
             onCategorySelected = {},
             onBoughtChange = { _, _ -> },
-            onEditList = {}
+            onEditList = {},
+            onOpenNutrition = {}
         )
     }
 }

@@ -14,6 +14,7 @@ import com.example.nutricart.ui.screens.editlist.EditListViewModel
 import com.example.nutricart.ui.screens.generate.GenerateViewModel
 import com.example.nutricart.ui.screens.grocerylist.GroceryListViewModel
 import com.example.nutricart.ui.screens.home.HomeViewModel
+import com.example.nutricart.ui.screens.nutrition.NutritionViewModel
 import com.example.nutricart.ui.screens.onboarding.OnboardingViewModel
 import com.example.nutricart.ui.screens.profile.ProfileViewModel
 import com.example.nutricart.ui.screens.profilesetup.ProfileSetupViewModel
@@ -47,6 +48,9 @@ val AppViewModelFactory = viewModelFactory {
     }
     initializer { GroceryListViewModel(createSavedStateHandle(), container.groceryListRepository) }
     initializer { EditListViewModel(createSavedStateHandle(), container.groceryListRepository) }
+    initializer {
+        NutritionViewModel(createSavedStateHandle(), container.groceryListRepository, container.profileRepository)
+    }
     initializer {
         AddItemsViewModel(
             createSavedStateHandle(),
