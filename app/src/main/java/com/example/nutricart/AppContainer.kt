@@ -58,8 +58,8 @@ class AppContainer(context: Context) {
         EntryRouter(settings, accountRepository, profileRepository)
     }
 
-    // The one thing here that is not on-device, and nothing uses it yet. It is created only
-    // when asked for, and everything above works without it.
+    // The one thing here that is not on-device. Only the list screen's optional AI insights
+    // use it; creating it contacts nothing, and everything above works without it.
     val aiReasoningEngine: AiReasoningEngine by lazy {
         FirebaseAiReasoningEngine(FirebaseAiLogicGateway(appContext))
     }

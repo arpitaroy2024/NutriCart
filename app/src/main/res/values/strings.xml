@@ -348,4 +348,22 @@
         <item quantity="one">%1$d item to review</item>
         <item quantity="other">%1$d items to review</item>
     </plurals>
+
+    <!-- Phase 10: optional AI insights on the grocery list -->
+    <string name="ai_insights_title">AI insights</string>
+    <string name="ai_insights_badge">Optional</string>
+    <string name="ai_insights_intro">Ask Google\'s Gemini to explain this list and where it could improve.</string>
+    <string name="ai_insights_data_note">This sends the list with your budget, household size, allergies and health conditions to Google. Your name and email are not sent.</string>
+    <string name="ai_insights_action">Get AI insights</string>
+    <string name="ai_insights_loading">Asking Gemini about this list…</string>
+    <string name="ai_insights_reasoning_label">Why</string>
+    <string name="ai_insights_suggestions_label">Suggestions</string>
+    <string name="ai_insights_disclaimer">Written by AI from this list, and it can be wrong. It does not change your list, the profile review or the nutrition figures, and it is not medical advice.</string>
+    <string name="ai_insights_hide">Hide</string>
+    <string name="ai_insights_error_connection">Couldn\'t reach AI insights. Check your connection and try again.</string>
+    <string name="ai_insights_error_unavailable">AI insights aren\'t available right now. Your list is not affected.</string>
+    <string name="ai_insights_type_budget">Budget</string>
+    <string name="ai_insights_type_nutrition">Nutrition</string>
+    <string name="ai_insights_type_variety">Variety</string>
+    <string name="ai_insights_type_other">Other</string>
 </resources>

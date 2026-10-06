@@ -48,7 +48,12 @@ val AppViewModelFactory = viewModelFactory {
         )
     }
     initializer {
-        GroceryListViewModel(createSavedStateHandle(), container.groceryListRepository, container.profileRepository)
+        GroceryListViewModel(
+            createSavedStateHandle(),
+            container.groceryListRepository,
+            container.profileRepository,
+            container.aiReasoningEngine
+        )
     }
     initializer {
         AlertsViewModel(

@@ -5,6 +5,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.test.core.app.ApplicationProvider
 import com.example.nutricart.R
 import com.example.nutricart.data.TestEnvironment
+import com.example.nutricart.data.ai.FakeAiEngine
 import com.example.nutricart.data.model.Allergen
 import com.example.nutricart.data.model.HealthCondition
 import com.example.nutricart.data.repository.NewListItem
@@ -378,7 +379,7 @@ class ProfileReviewTest {
 
     @Test
     fun listScreen_marksOnlyTheFlaggedItems() {
-        val viewModel = GroceryListViewModel(SavedStateHandle(), env.lists, env.profiles)
+        val viewModel = GroceryListViewModel(SavedStateHandle(), env.lists, env.profiles, FakeAiEngine())
         env.awaitUntil { viewModel.state.value.review != null }
 
         val review = viewModel.state.value.review!!

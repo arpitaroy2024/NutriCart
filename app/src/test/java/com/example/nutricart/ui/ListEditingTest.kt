@@ -2,6 +2,7 @@ package com.example.nutricart.ui
 
 import androidx.lifecycle.SavedStateHandle
 import com.example.nutricart.data.TestEnvironment
+import com.example.nutricart.data.ai.FakeAiEngine
 import com.example.nutricart.data.local.DemoCatalogSeed
 import com.example.nutricart.data.model.FoodCategory
 import com.example.nutricart.data.repository.AddItemResult
@@ -70,7 +71,7 @@ class ListEditingTest {
             env.awaitUntil { !viewModel.state.value.loading }
         }
 
-    private fun listScreen(id: Long = listId) = GroceryListViewModel(args(id), env.lists, env.profiles).also { viewModel ->
+    private fun listScreen(id: Long = listId) = GroceryListViewModel(args(id), env.lists, env.profiles, FakeAiEngine()).also { viewModel ->
         env.awaitUntil { !viewModel.state.value.loading }
     }
 

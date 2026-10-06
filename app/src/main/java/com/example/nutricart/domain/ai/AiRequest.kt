@@ -11,8 +11,8 @@ data class AiRequest(val task: AiTask, val context: AiGroceryContext)
 
 /*
  * The facts handed to the model. Every value is produced by the app's own deterministic code
- * or typed by the user; the model is told to treat them as the only facts it has. Prices,
- * per-item nutrition and allergen data are deliberately not included.
+ * or typed by the user; the model is told to treat them as the only facts it has. Item
+ * prices, per-item nutrition and the catalog's allergen data are deliberately not included.
  */
 data class AiGroceryContext(
     val householdSize: Int,
@@ -22,10 +22,21 @@ data class AiGroceryContext(
     val healthConditions: List<String>,
     val items: List<AiListItem>,
     // Null when the list could not be analysed for nutrition
-    val nutrition: AiNutritionSummary?
+    val nutrition: AiNutritionSummary?,
+    // The list's estimated total, from the app's own sum. Null when it is not supplied.
+    val listTotal: Int? = null,
+    // What the profile review flagged. The model explains these; it never decides them.
+    val flaggedItems: List<AiFlaggedItem> = emptyList(),
+    // Findings about the list as a whole, such as "CarbohydrateShareHigh (Diabetes)"
+    val listConsiderations: List<String> = emptyList(),
+    // Allergies and conditions on the profile that no rule covers
+    val notCheckedByRules: List<String> = emptyList()
 )
 
 data class AiListItem(val name: String, val category: String, val quantity: Int, val unit: String)
+
+// One item the review flagged, with a line per reason such as "ContainsListedAllergen (Peanuts)"
+data class AiFlaggedItem(val name: String, val reasons: List<String>, val keptByUser: Boolean)
 
 // Figures copied from NutritionAnalysis. Coverage is the percent of NutriCart's daily
 // reference per person, keyed by nutrient ("energy", "protein", "carbohydrate", "fat", "iron").

@@ -255,8 +255,11 @@ class FirebaseAiLayerTest {
 
         assertEquals(emptyList<File>(), (domain + ui).filter { it.usesFirebase() })
         assertEquals(emptyList<File>(), (domain + ui).filter { it.readText().contains("nutricart.data.ai") })
-        // No screen or ViewModel reaches the engine yet, by any name
-        assertEquals(emptyList<File>(), ui.filter { it.readText().contains("aiReasoningEngine") })
+        // Only the ViewModel factory takes the engine from the container (Phase 10)
+        assertEquals(
+            listOf("AppViewModelFactory.kt"),
+            ui.filter { it.readText().contains("aiReasoningEngine") }.map { it.name }
+        )
     }
 
     @Test

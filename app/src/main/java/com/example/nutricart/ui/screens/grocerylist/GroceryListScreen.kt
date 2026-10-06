@@ -93,6 +93,8 @@ fun GroceryListScreen(
         onQueryChange = viewModel::onQueryChange,
         onCategorySelected = viewModel::onCategorySelected,
         onBoughtChange = viewModel::onBoughtChange,
+        onRequestInsights = viewModel::onRequestInsights,
+        onDismissInsights = viewModel::onDismissInsights,
         onEditList = { state.list?.let { onEditList(it.id) } },
         onOpenNutrition = { state.list?.let { onOpenNutrition(it.id) } },
         onOpenReview = { state.list?.let { onOpenReview(it.id) } }
@@ -106,6 +108,8 @@ private fun GroceryListContent(
     onQueryChange: (String) -> Unit,
     onCategorySelected: (FoodCategory?) -> Unit,
     onBoughtChange: (Long, Boolean) -> Unit,
+    onRequestInsights: () -> Unit,
+    onDismissInsights: () -> Unit,
     onEditList: () -> Unit,
     onOpenNutrition: () -> Unit,
     onOpenReview: () -> Unit
@@ -180,6 +184,8 @@ private fun GroceryListContent(
                     onQueryChange = onQueryChange,
                     onCategorySelected = onCategorySelected,
                     onBoughtChange = onBoughtChange,
+                    onRequestInsights = onRequestInsights,
+                    onDismissInsights = onDismissInsights,
                     onOpenReview = onOpenReview
                 )
             }
@@ -193,6 +199,8 @@ private fun ListBody(
     onQueryChange: (String) -> Unit,
     onCategorySelected: (FoodCategory?) -> Unit,
     onBoughtChange: (Long, Boolean) -> Unit,
+    onRequestInsights: () -> Unit,
+    onDismissInsights: () -> Unit,
     onOpenReview: () -> Unit
 ) {
     val visible = state.visibleItems
@@ -242,6 +250,14 @@ private fun ListBody(
                 ),
                 verticalArrangement = Arrangement.spacedBy(Spacing.sm)
             ) {
+                // Above the items and scrolling with them, so it never takes room from the list
+                item(key = "ai-insights") {
+                    AiInsightsCard(
+                        state = state.insights,
+                        onRequest = onRequestInsights,
+                        onDismiss = onDismissInsights
+                    )
+                }
                 items(visible, key = { it.item.id }) { entry ->
                     ItemCard(
                         entry = entry,
@@ -395,6 +411,8 @@ private fun GroceryListPreview() {
             onQueryChange = {},
             onCategorySelected = {},
             onBoughtChange = { _, _ -> },
+            onRequestInsights = {},
+            onDismissInsights = {},
             onEditList = {},
             onOpenNutrition = {},
             onOpenReview = {}

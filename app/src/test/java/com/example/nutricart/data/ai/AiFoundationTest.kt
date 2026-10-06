@@ -81,9 +81,15 @@ class AiFoundationTest {
         val context = AiRequestJson.context(AiSampleContext.request())
 
         assertEquals(
-            setOf("householdSize", "monthlyBudget", "currency", "allergies", "healthConditions", "items", "nutrition"),
+            setOf(
+                "householdSize", "monthlyBudget", "currency", "allergies", "healthConditions", "items", "nutrition",
+                "listTotal", "flaggedItems", "listConsiderations", "notCheckedByRules"
+            ),
             context.keys().asSequence().toSet()
         )
+        // The sample request supplies none of the Phase 10 review fields
+        assertTrue(context.isNull("listTotal"))
+        assertEquals(0, context.getJSONArray("flaggedItems").length())
         assertEquals(4, context.getInt("householdSize"))
         assertEquals(8000, context.getInt("monthlyBudget"))
         assertEquals("BDT", context.getString("currency"))
@@ -346,16 +352,20 @@ class AiFoundationTest {
     @Test
     fun deterministicCodeAndUi_doNotDependOnTheAiLayer() {
         val root = "src/main/java/com/example/nutricart"
-        // AppContainer is where the engine is created (Phase 9B); nothing else may name it
+        // AppContainer is where the engine is created (Phase 9B); nothing else may name data/ai
         val outsideAi = sources(root)
             .filterNot { it.invariantSeparatorsPath.contains("/ai/") || it.name == "AppContainer.kt" }
         assertTrue(outsideAi.size > 50)
 
-        val dependents = outsideAi.filter { file ->
-            file.readText().let { it.contains("nutricart.domain.ai") || it.contains("nutricart.data.ai") }
-        }
+        assertEquals(emptyList<File>(), outsideAi.filter { it.readText().contains("nutricart.data.ai") })
 
-        assertEquals(emptyList<File>(), dependents)
+        // Since Phase 10 the list screen shows AI insights, through the domain interface.
+        // Nothing else, and none of the deterministic code, knows the AI layer exists.
+        val dependents = outsideAi.filter { it.readText().contains("nutricart.domain.ai") }
+        assertTrue(dependents.isNotEmpty())
+        dependents.forEach {
+            assertTrue("${it.path} names the AI layer", it.invariantSeparatorsPath.contains("/ui/screens/grocerylist/"))
+        }
     }
 
     @Test

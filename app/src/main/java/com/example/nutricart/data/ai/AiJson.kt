@@ -19,11 +19,21 @@ object AiRequestJson {
     const val INSTRUCTIONS =
         "You are a reasoning assistant inside NutriCart, a grocery planning app. " +
             "The JSON context you are given is the only source of facts. " +
-            "Do not state or estimate prices, nutrition figures, allergen contents or product availability. " +
+            "It was produced by NutriCart's own rules and calculations and is authoritative: " +
+            "never contradict it and never restate a figure differently from how it is given. " +
+            "Do not invent or estimate prices, nutrition figures, allergen contents or product availability; " +
+            "use only figures that appear in the context. " +
             "Do not name any food item that is not in the context's items list; refer to food groups instead. " +
             "Treat the listed allergies and health conditions as constraints supplied by the user, " +
-            "not as something to assess. Do not give medical advice, do not describe anything as safe or unsafe, " +
+            "not as something to assess. Never suggest adding a food that contains a listed allergy " +
+            "or anything else that goes against a supplied constraint. " +
+            "Items in flaggedItems were flagged by NutriCart's allergy and health-condition rules: " +
+            "never say or imply that a flagged item is acceptable, and never play a flag down. " +
+            "Entries in notCheckedByRules were not checked by any rule: say they were not checked instead of reasoning about them. " +
+            "If the context does not hold what is needed, say so instead of guessing. " +
+            "Do not give medical advice, do not describe anything as safe or unsafe, " +
             "and do not mention diagnosis, treatment or cure. " +
+            "Put the most important recommendation first. " +
             "Answer only with JSON that matches the supplied schema."
 
     fun question(task: AiTask): String = when (task) {
@@ -66,6 +76,20 @@ object AiRequestJson {
                         .put("missingFoodGroups", JSONArray(it.missingFoodGroups))
                 } ?: JSONObject.NULL
             )
+            .put("listTotal", context.listTotal ?: JSONObject.NULL)
+            .put(
+                "flaggedItems",
+                JSONArray(
+                    context.flaggedItems.map {
+                        JSONObject()
+                            .put("name", it.name)
+                            .put("reasons", JSONArray(it.reasons))
+                            .put("keptByUser", it.keptByUser)
+                    }
+                )
+            )
+            .put("listConsiderations", JSONArray(context.listConsiderations))
+            .put("notCheckedByRules", JSONArray(context.notCheckedByRules))
     }
 
     // JSON Schema for AiResponse

@@ -2,6 +2,7 @@ package com.example.nutricart.ui
 
 import androidx.lifecycle.SavedStateHandle
 import com.example.nutricart.data.TestEnvironment
+import com.example.nutricart.data.ai.FakeAiEngine
 import com.example.nutricart.data.local.DemoCatalogSeed
 import com.example.nutricart.data.model.Allergen
 import com.example.nutricart.data.model.FoodCategory
@@ -66,7 +67,7 @@ class GroceryGenerationTest {
 
     private fun listScreen(listId: Long? = null): GroceryListViewModel {
         val args = if (listId == null) emptyMap() else mapOf(Routes.ARG_LIST_ID to listId)
-        return GroceryListViewModel(SavedStateHandle(args), env.lists, env.profiles).also { viewModel ->
+        return GroceryListViewModel(SavedStateHandle(args), env.lists, env.profiles, FakeAiEngine()).also { viewModel ->
             env.awaitUntil { !viewModel.state.value.loading }
         }
     }
