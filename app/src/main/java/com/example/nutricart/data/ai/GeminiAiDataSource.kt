@@ -45,9 +45,10 @@ sealed interface GeminiReply {
  * JSON schema for the answer, and asks Google not to store the exchange.
  *
  * The key comes from the caller every time and is sent as a header, so it is never part of a
- * URL, a log line or an error detail. Nothing in the app supplies a key: the shipped APK has
- * no key and no INTERNET permission. A released app must reach the model through a backend
- * that holds the key (project_docs/phase_9_ai_foundation.md, section 6).
+ * URL, a log line or an error detail. Nothing in the app supplies a key or creates this
+ * class: it is the Phase 9A development path, used only by GeminiLiveCheck. The app's own
+ * path is data/ai/firebase, where Firebase AI Logic holds the authorisation
+ * (project_docs/phase_9b_firebase_ai_logic.md).
  */
 class GeminiAiDataSource(
     private val apiKey: () -> String?,
@@ -118,7 +119,7 @@ class GeminiAiDataSource(
 
     companion object {
         const val ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/interactions"
-        const val DEFAULT_MODEL = "gemini-3.8-flash"
+        const val DEFAULT_MODEL = AiModels.GEMINI_FLASH
         private const val STATUS_COMPLETED = "completed"
     }
 }

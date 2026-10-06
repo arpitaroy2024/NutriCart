@@ -4,6 +4,12 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
+// The Firebase configuration file is not in the repository. Without it the project still
+// builds and the AI layer reports that it is not configured.
+if (file("google-services.json").exists()) {
+    apply(plugin = libs.plugins.google.services.get().pluginId)
+}
+
 android {
     namespace = "com.example.nutricart"
     compileSdk {
@@ -54,6 +60,11 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.datastore.preferences)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.ai)
+    // App Check: the debug provider can never reach a release build
+    debugImplementation(libs.firebase.appcheck.debug)
+    releaseImplementation(libs.firebase.appcheck.playintegrity)
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)

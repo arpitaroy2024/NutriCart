@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.preferencesDataStoreFile
 import com.example.nutricart.data.SettingsStore
+import com.example.nutricart.data.ai.firebase.FirebaseAiLogicGateway
+import com.example.nutricart.data.ai.firebase.FirebaseAiReasoningEngine
 import com.example.nutricart.data.local.NutriCartDatabase
 import com.example.nutricart.data.repository.AccountRepository
 import com.example.nutricart.data.repository.BudgetRepository
@@ -15,9 +17,10 @@ import com.example.nutricart.data.repository.LocalCatalogRepository
 import com.example.nutricart.data.repository.LocalGroceryListRepository
 import com.example.nutricart.data.repository.LocalProfileRepository
 import com.example.nutricart.data.repository.ProfileRepository
+import com.example.nutricart.domain.ai.AiReasoningEngine
 import com.example.nutricart.navigation.EntryRouter
 
-// App-wide dependencies, created once on first use. Everything is on-device.
+// App-wide dependencies, created once on first use. Everything but the AI engine is on-device.
 class AppContainer(context: Context) {
     private val appContext = context.applicationContext
 
@@ -53,5 +56,11 @@ class AppContainer(context: Context) {
 
     val entryRouter: EntryRouter by lazy {
         EntryRouter(settings, accountRepository, profileRepository)
+    }
+
+    // The one thing here that is not on-device, and nothing uses it yet. It is created only
+    // when asked for, and everything above works without it.
+    val aiReasoningEngine: AiReasoningEngine by lazy {
+        FirebaseAiReasoningEngine(FirebaseAiLogicGateway(appContext))
     }
 }

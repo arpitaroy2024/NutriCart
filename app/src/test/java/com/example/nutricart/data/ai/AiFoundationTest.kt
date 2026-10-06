@@ -346,7 +346,9 @@ class AiFoundationTest {
     @Test
     fun deterministicCodeAndUi_doNotDependOnTheAiLayer() {
         val root = "src/main/java/com/example/nutricart"
-        val outsideAi = sources(root).filterNot { it.invariantSeparatorsPath.contains("/ai/") }
+        // AppContainer is where the engine is created (Phase 9B); nothing else may name it
+        val outsideAi = sources(root)
+            .filterNot { it.invariantSeparatorsPath.contains("/ai/") || it.name == "AppContainer.kt" }
         assertTrue(outsideAi.size > 50)
 
         val dependents = outsideAi.filter { file ->
@@ -357,9 +359,9 @@ class AiFoundationTest {
     }
 
     @Test
-    fun app_hasNoKeyAndNoNetworkPermission() {
-        assertFalse(File("src/main/AndroidManifest.xml").readText().contains("android.permission.INTERNET"))
-
+    fun app_hasNoKey() {
+        // Since Phase 9B the Firebase libraries give the app the INTERNET permission, so the
+        // absence of a key is what is checked
         val googleKey = Regex("AIza[0-9A-Za-z_-]{20,}")
         val leaks = File("src/main").walkTopDown()
             .filter { it.isFile && it.extension in setOf("kt", "xml", "properties", "json") }

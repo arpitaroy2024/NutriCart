@@ -2,6 +2,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- The Firebase AI library declares the microphone for its voice features. NutriCart
+         sends text only, so the permission is taken out of the merged manifest. -->
+    <uses-permission
+        android:name="android.permission.RECORD_AUDIO"
+        tools:node="remove" />
+
     <application
         android:name=".NutriCartApp"
         android:allowBackup="true"
