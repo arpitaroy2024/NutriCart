@@ -1,0 +1,49 @@
+package com.example.nutricart.domain.ai
+
+import com.example.nutricart.domain.nutrition.NutritionAnalysis
+
+// What the reasoning layer is asked to do. One task for now.
+enum class AiTask { ReviewGroceryPlan }
+
+// A provider-neutral request: a task and the facts it may reason about. Nothing here names
+// Gemini, and nothing here identifies a person (no name, email, account id or region).
+data class AiRequest(val task: AiTask, val context: AiGroceryContext)
+
+/*
+ * The facts handed to the model. Every value is produced by the app's own deterministic code
+ * or typed by the user; the model is told to treat them as the only facts it has. Prices,
+ * per-item nutrition and allergen data are deliberately not included.
+ */
+data class AiGroceryContext(
+    val householdSize: Int,
+    val monthlyBudget: Int,
+    val currency: String,
+    val allergies: List<String>,
+    val healthConditions: List<String>,
+    val items: List<AiListItem>,
+    // Null when the list could not be analysed for nutrition
+    val nutrition: AiNutritionSummary?
+)
+
+data class AiListItem(val name: String, val category: String, val quantity: Int, val unit: String)
+
+// Figures copied from NutritionAnalysis. Coverage is the percent of NutriCart's daily
+// reference per person, keyed by nutrient ("energy", "protein", "carbohydrate", "fat", "iron").
+data class AiNutritionSummary(
+    val score: Int,
+    val scoreBand: String,
+    val daysCovered: Int,
+    val coveragePercent: Map<String, Int>,
+    val missingFoodGroups: List<String>
+) {
+    companion object {
+        // Copies existing figures; calculates nothing
+        fun from(analysis: NutritionAnalysis) = AiNutritionSummary(
+            score = analysis.score.value,
+            scoreBand = analysis.score.band.name,
+            daysCovered = analysis.days,
+            coveragePercent = analysis.coverage.keys.associate { it.name.lowercase() to analysis.coveragePercent(it) },
+            missingFoodGroups = analysis.missingGroups.map { it.name }
+        )
+    }
+}

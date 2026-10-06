@@ -9,3 +9,16 @@ captures/
 .externalNativeBuild/
 .cxx/
 *.hprof
+
+# Secrets and local configuration: never commit
+.env
+.env.*
+*.env
+secrets.properties
+*.secret
+*.jks
+*.keystore
+*.p12
+*.pem
+google-services.json
+service-account*.json
