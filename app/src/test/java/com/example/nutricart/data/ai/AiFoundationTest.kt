@@ -152,7 +152,7 @@ class AiFoundationTest {
         val format = body.getJSONObject("response_format")
         assertEquals("application/json", format.getString("mime_type"))
         assertEquals(
-            listOf("summary", "reasoning", "recommendations"),
+            listOf("summary", "reasoning", "recommendations", "prioritizedItems", "tradeOffs"),
             format.getJSONObject("schema").getJSONArray("required").let { r -> List(r.length()) { r.getString(it) } }
         )
     }

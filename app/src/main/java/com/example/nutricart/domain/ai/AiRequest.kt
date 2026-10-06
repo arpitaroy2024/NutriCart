@@ -33,7 +33,14 @@ data class AiGroceryContext(
     val notCheckedByRules: List<String> = emptyList()
 )
 
-data class AiListItem(val name: String, val category: String, val quantity: Int, val unit: String)
+// mainNutrient is the catalog's own tag for the item ("Protein", "Carbs", "Fat", "Iron")
+data class AiListItem(
+    val name: String,
+    val category: String,
+    val quantity: Int,
+    val unit: String,
+    val mainNutrient: String? = null
+)
 
 // One item the review flagged, with a line per reason such as "ContainsListedAllergen (Peanuts)"
 data class AiFlaggedItem(val name: String, val reasons: List<String>, val keptByUser: Boolean)

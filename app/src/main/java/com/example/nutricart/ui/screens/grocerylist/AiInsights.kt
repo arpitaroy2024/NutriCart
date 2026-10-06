@@ -8,6 +8,8 @@ import com.example.nutricart.domain.ai.AiFlaggedItem
 import com.example.nutricart.domain.ai.AiGroceryContext
 import com.example.nutricart.domain.ai.AiListItem
 import com.example.nutricart.domain.ai.AiNutritionSummary
+import com.example.nutricart.domain.ai.AiPicks
+import com.example.nutricart.domain.ai.AiPrioritizedItem
 import com.example.nutricart.domain.ai.AiResponse
 import com.example.nutricart.domain.ai.AiResult
 import com.example.nutricart.domain.conflicts.ConflictAnalysis
@@ -20,16 +22,21 @@ sealed interface AiInsightsUiState {
     data object Idle : AiInsightsUiState
     data object Loading : AiInsightsUiState
 
-    // An answer that passed AiResponseValidator
-    data class Ready(val response: AiResponse) : AiInsightsUiState
+    // An answer that passed AiResponseValidator. picks are the model's prioritised items
+    // after AiPicks has checked them against the list: only items that are on it.
+    data class Ready(
+        val response: AiResponse,
+        val picks: List<AiPrioritizedItem> = emptyList()
+    ) : AiInsightsUiState
     data class Failed(val reason: AiInsightsFailure) : AiInsightsUiState
 }
 
 // What the user is told. The technical cause stays in AiResult.Failure.
 enum class AiInsightsFailure { Connection, Unavailable }
 
-fun AiResult?.toInsightsState(): AiInsightsUiState = when (this) {
-    is AiResult.Success -> AiInsightsUiState.Ready(response)
+// context is what the answer was asked about; the picks are checked against it
+fun AiResult?.toInsightsState(context: AiGroceryContext): AiInsightsUiState = when (this) {
+    is AiResult.Success -> AiInsightsUiState.Ready(response, AiPicks.accepted(response, context))
     // Null is a timeout
     null -> AiInsightsUiState.Failed(AiInsightsFailure.Connection)
     is AiResult.Failure -> AiInsightsUiState.Failed(
@@ -57,7 +64,11 @@ object AiInsightsContext {
         currency = CURRENCY,
         allergies = profile?.let { p -> p.allergies.map { it.name } + p.customAllergies }.orEmpty(),
         healthConditions = profile?.let { p -> p.conditions.map { it.name } + p.customConditions }.orEmpty(),
-        items = items.map { AiListItem(it.catalog.name, it.catalog.category.name, it.item.quantity, it.catalog.unit) },
+        items = items.map {
+            AiListItem(
+                it.catalog.name, it.catalog.category.name, it.item.quantity, it.catalog.unit, it.catalog.nutrientTag.name
+            )
+        },
         nutrition = NutritionAnalyzer.analyze(items, profile?.householdSize ?: 0)?.let { AiNutritionSummary.from(it) },
         listTotal = items.sumOf { it.item.quantity * it.item.unitPrice },
         flaggedItems = review?.items.orEmpty().map { conflict ->

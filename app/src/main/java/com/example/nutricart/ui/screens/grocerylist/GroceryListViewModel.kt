@@ -160,7 +160,7 @@ class GroceryListViewModel(
             } catch (e: Exception) {
                 AiResult.Failure(AiError.Api, e.javaClass.simpleName)
             }
-            _state.update { it.copy(insights = result.toInsightsState()) }
+            _state.update { it.copy(insights = result.toInsightsState(context)) }
         }
     }
 

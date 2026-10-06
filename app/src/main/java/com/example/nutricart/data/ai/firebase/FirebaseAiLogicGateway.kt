@@ -3,6 +3,7 @@ package com.example.nutricart.data.ai.firebase
 import android.content.Context
 import com.example.nutricart.data.ai.AiModels
 import com.example.nutricart.domain.ai.AiError
+import com.example.nutricart.domain.ai.AiPriority
 import com.example.nutricart.domain.ai.AiRecommendationType
 import com.example.nutricart.domain.ai.AiResponseValidator
 import com.google.firebase.Firebase
@@ -35,7 +36,18 @@ internal object FirebaseAiSchema {
                 ),
                 minItems = 1,
                 maxItems = AiResponseValidator.MAX_RECOMMENDATIONS
-            )
+            ),
+            "prioritizedItems" to Schema.array(
+                items = Schema.obj(
+                    mapOf(
+                        "itemName" to Schema.string(),
+                        "priority" to Schema.enumeration(AiPriority.entries.map { it.wireName }),
+                        "reason" to Schema.string()
+                    )
+                ),
+                maxItems = AiResponseValidator.MAX_PRIORITIZED_ITEMS
+            ),
+            "tradeOffs" to Schema.array(items = Schema.string(), maxItems = AiResponseValidator.MAX_TRADE_OFFS)
         )
     )
 }

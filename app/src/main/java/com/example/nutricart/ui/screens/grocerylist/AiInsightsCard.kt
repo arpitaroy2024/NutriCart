@@ -28,6 +28,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import com.example.nutricart.R
+import com.example.nutricart.domain.ai.AiPrioritizedItem
+import com.example.nutricart.domain.ai.AiPriority
 import com.example.nutricart.domain.ai.AiRecommendation
 import com.example.nutricart.domain.ai.AiRecommendationType
 import com.example.nutricart.domain.ai.AiResponse
@@ -136,6 +138,7 @@ fun AiInsightsCard(
                 }
                 is AiInsightsUiState.Ready -> Answer(
                     response = state.response,
+                    picks = state.picks,
                     onDismiss = {
                         expanded = false
                         onDismiss()
@@ -161,7 +164,7 @@ fun AiInsightsCard(
 }
 
 @Composable
-private fun Answer(response: AiResponse, onDismiss: () -> Unit) {
+private fun Answer(response: AiResponse, picks: List<AiPrioritizedItem>, onDismiss: () -> Unit) {
     val colors = NutriCartTheme.colors
     val typography = NutriCartTheme.typography
     Text(
@@ -170,6 +173,31 @@ private fun Answer(response: AiResponse, onDismiss: () -> Unit) {
         style = typography.body,
         color = colors.onSurface
     )
+    // Only items that are on the list; the section is left out when none passed the check
+    if (picks.isNotEmpty()) {
+        Label(stringResource(R.string.ai_insights_picks_label))
+        picks.forEach { pick ->
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
+                ) {
+                    Text(
+                        text = pick.itemName,
+                        modifier = Modifier.weight(1f),
+                        style = typography.body.copy(fontWeight = FontWeight.Bold),
+                        color = colors.onSurface
+                    )
+                    TagChip(
+                        text = stringResource(pick.priority.labelRes()),
+                        height = TypeTagHeight,
+                        uppercase = true
+                    )
+                }
+                Text(text = pick.reason, style = typography.caption, color = colors.onSurface)
+            }
+        }
+    }
     Label(stringResource(R.string.ai_insights_reasoning_label))
     Text(text = response.reasoning, style = typography.caption, color = colors.onSurface)
     Label(stringResource(R.string.ai_insights_suggestions_label))
@@ -195,6 +223,12 @@ private fun Answer(response: AiResponse, onDismiss: () -> Unit) {
             Text(text = recommendation.explanation, style = typography.caption, color = colors.onSurface)
         }
     }
+    if (response.tradeOffs.isNotEmpty()) {
+        Label(stringResource(R.string.ai_insights_trade_offs_label))
+        response.tradeOffs.forEach { tradeOff ->
+            Text(text = tradeOff, style = typography.caption, color = colors.onSurface)
+        }
+    }
     Text(
         text = stringResource(R.string.ai_insights_disclaimer),
         style = typography.caption,
@@ -210,6 +244,12 @@ private fun Label(text: String) {
         style = NutriCartTheme.typography.micro,
         color = NutriCartTheme.colors.onSurfaceMuted
     )
+}
+
+private fun AiPriority.labelRes(): Int = when (this) {
+    AiPriority.High -> R.string.ai_insights_priority_high
+    AiPriority.Medium -> R.string.ai_insights_priority_medium
+    AiPriority.Low -> R.string.ai_insights_priority_low
 }
 
 private fun AiRecommendationType.labelRes(): Int = when (this) {

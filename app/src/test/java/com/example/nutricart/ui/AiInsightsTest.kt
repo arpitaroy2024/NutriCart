@@ -167,7 +167,7 @@ class AiInsightsTest {
         ).forEach { assertFalse("the prompt holds \"$it\"", prompt.contains(it, ignoreCase = true)) }
         val context = JSONObject(prompt.substringAfter("Context (JSON):\n"))
         assertEquals(
-            setOf("name", "category", "quantity", "unit"),
+            setOf("name", "category", "quantity", "unit", "mainNutrient"),
             context.getJSONArray("items").getJSONObject(0).keys().asSequence().toSet()
         )
         assertEquals(

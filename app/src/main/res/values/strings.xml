@@ -356,6 +356,11 @@
     <string name="ai_insights_data_note">This sends the list with your budget, household size, allergies and health conditions to Google. Your name and email are not sent.</string>
     <string name="ai_insights_action">Get AI insights</string>
     <string name="ai_insights_loading">Asking Gemini about this list…</string>
+    <string name="ai_insights_picks_label">AI picks from your list</string>
+    <string name="ai_insights_priority_high">High</string>
+    <string name="ai_insights_priority_medium">Medium</string>
+    <string name="ai_insights_priority_low">Low</string>
+    <string name="ai_insights_trade_offs_label">Trade-offs</string>
     <string name="ai_insights_reasoning_label">Why</string>
     <string name="ai_insights_suggestions_label">Suggestions</string>
     <string name="ai_insights_disclaimer">Written by AI from this list, and it can be wrong. It does not change your list, the profile review or the nutrition figures, and it is not medical advice.</string>

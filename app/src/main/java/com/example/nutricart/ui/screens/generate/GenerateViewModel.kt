@@ -11,6 +11,7 @@ import com.example.nutricart.domain.GenerationFailure
 import com.example.nutricart.domain.GenerationRequest
 import com.example.nutricart.domain.GenerationResult
 import com.example.nutricart.domain.GroceryGenerator
+import com.example.nutricart.domain.conflicts.AllergyMatcher
 import com.example.nutricart.navigation.Routes
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -117,7 +118,9 @@ class GenerateViewModel(
                     catalog = items,
                     prices = prices,
                     template = catalog.basketTemplate(),
-                    allergies = profile.allergies,
+                    // Listed allergies plus typed ones the alias table recognises, as in
+                    // the profile review. A typed allergy it does not know leaves nothing out.
+                    allergies = AllergyMatcher.resolve(profile.allergies, profile.customAllergies).allergens.keys,
                     conditions = profile.conditions
                 )
             )

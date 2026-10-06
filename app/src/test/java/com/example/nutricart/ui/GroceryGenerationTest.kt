@@ -310,6 +310,39 @@ class GroceryGenerationTest {
         assertEquals(list.accountId, budget.accountId)
     }
 
+    // Typed allergies: recognised names count, unknown ones are never guessed
+
+    private fun generatedWith(allergies: Set<Allergen> = emptySet(), custom: List<String> = emptyList()) = runBlocking {
+        env.profiles.save("Rangpur Division", 4, allergies, emptySet(), customAllergies = custom)
+        items(generate(8_000))
+    }
+
+    @Test
+    fun recognisedTypedAllergy_leavesMatchingItemsOutLikeTheListedOne() {
+        val plain = generatedWith()
+        // Without an allergy the list holds an egg item, so leaving it out is visible
+        assertTrue(plain.any { Allergen.Eggs in it.catalog.allergens })
+
+        val typed = generatedWith(custom = listOf(" Egg ", "peanut"))
+
+        assertTrue(typed.isNotEmpty())
+        assertTrue(typed.none { Allergen.Eggs in it.catalog.allergens || Allergen.Peanuts in it.catalog.allergens })
+        // Exactly what picking the same allergies from the list gives
+        val listed = generatedWith(allergies = setOf(Allergen.Eggs, Allergen.Peanuts))
+        assertEquals(listed.map { it.catalog.id to it.item.quantity }, typed.map { it.catalog.id to it.item.quantity })
+    }
+
+    @Test
+    fun unknownTypedAllergy_changesNothingAndIsNotMatchedOnNames() {
+        val plain = generatedWith()
+
+        // "Rice" and "Potato" are item names, not allergen groups; "Kiwi" has no data at all
+        val typed = generatedWith(custom = listOf("Kiwi", "Rice", "Potato", "ExampleFood"))
+
+        assertEquals(plain.map { it.catalog.id to it.item.quantity }, typed.map { it.catalog.id to it.item.quantity })
+        assertTrue(typed.any { it.catalog.name.contains("rice", ignoreCase = true) })
+    }
+
     @Test
     fun generatedList_usesTheProfilesHouseholdRegionAndRestrictions() {
         runBlocking {

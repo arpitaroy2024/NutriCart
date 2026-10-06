@@ -1,6 +1,8 @@
 package com.example.nutricart.data.ai
 
 import com.example.nutricart.domain.ai.AiError
+import com.example.nutricart.domain.ai.AiPrioritizedItem
+import com.example.nutricart.domain.ai.AiPriority
 import com.example.nutricart.domain.ai.AiRecommendation
 import com.example.nutricart.domain.ai.AiRecommendationType
 import com.example.nutricart.domain.ai.AiRequest
@@ -39,7 +41,13 @@ object AiRequestJson {
     fun question(task: AiTask): String = when (task) {
         AiTask.ReviewGroceryPlan ->
             "Analyze this grocery context and explain the biggest opportunities for improving the grocery plan " +
-                "while respecting the supplied constraints."
+                "while respecting the supplied constraints. " +
+                "In prioritizedItems, pick up to ${AiResponseValidator.MAX_PRIORITIZED_ITEMS} items from the context's " +
+                "items list that matter most for this household. Copy each itemName exactly as it is written " +
+                "in the items list, never name anything that is not in that list, never pick an item that is " +
+                "in flaggedItems, and give each a priority and a one-sentence reason drawn only from the context. " +
+                "In tradeOffs, give up to ${AiResponseValidator.MAX_TRADE_OFFS} short trade-offs the list makes, " +
+                "such as budget against variety."
     }
 
     fun prompt(request: AiRequest): String =
@@ -62,6 +70,7 @@ object AiRequestJson {
                             .put("category", it.category)
                             .put("quantity", it.quantity)
                             .put("unit", it.unit)
+                            .apply { if (it.mainNutrient != null) put("mainNutrient", it.mainNutrient) }
                     }
                 )
             )
@@ -106,6 +115,17 @@ object AiRequestJson {
             )
             .put("required", JSONArray(listOf("type", "title", "explanation")))
             .put("additionalProperties", false)
+        val prioritizedItem = JSONObject()
+            .put("type", "object")
+            .put(
+                "properties",
+                JSONObject()
+                    .put("itemName", text())
+                    .put("priority", text().put("enum", JSONArray(AiPriority.entries.map { it.wireName })))
+                    .put("reason", text())
+            )
+            .put("required", JSONArray(listOf("itemName", "priority", "reason")))
+            .put("additionalProperties", false)
         return JSONObject()
             .put("type", "object")
             .put(
@@ -121,8 +141,22 @@ object AiRequestJson {
                             .put("minItems", 1)
                             .put("maxItems", AiResponseValidator.MAX_RECOMMENDATIONS)
                     )
+                    .put(
+                        "prioritizedItems",
+                        JSONObject()
+                            .put("type", "array")
+                            .put("items", prioritizedItem)
+                            .put("maxItems", AiResponseValidator.MAX_PRIORITIZED_ITEMS)
+                    )
+                    .put(
+                        "tradeOffs",
+                        JSONObject()
+                            .put("type", "array")
+                            .put("items", text())
+                            .put("maxItems", AiResponseValidator.MAX_TRADE_OFFS)
+                    )
             )
-            .put("required", JSONArray(listOf("summary", "reasoning", "recommendations")))
+            .put("required", JSONArray(listOf("summary", "reasoning", "recommendations", "prioritizedItems", "tradeOffs")))
             .put("additionalProperties", false)
     }
 }
@@ -147,7 +181,25 @@ object AiResponseJson {
                         title = item.string("title"),
                         explanation = item.string("explanation")
                     )
-                }
+                },
+                // The two Phase 11 lists may be absent; when present they must be well formed
+                prioritizedItems = root.optionalArray("prioritizedItems")?.let { items ->
+                    List(items.length()) { index ->
+                        val item = items.getJSONObject(index)
+                        val priority = item.string("priority")
+                        AiPrioritizedItem(
+                            itemName = item.string("itemName"),
+                            priority = AiPriority.fromWire(priority)
+                                ?: return AiResult.Failure(AiError.InvalidResponse, "unknown priority \"$priority\""),
+                            reason = item.string("reason")
+                        )
+                    }
+                }.orEmpty(),
+                tradeOffs = root.optionalArray("tradeOffs")?.let { items ->
+                    List(items.length()) { index ->
+                        items.opt(index) as? String ?: throw JSONException("tradeOffs[$index] is not a string")
+                    }
+                }.orEmpty()
             )
         } catch (e: JSONException) {
             return AiResult.Failure(AiError.MalformedResponse, e.message.orEmpty())
@@ -161,6 +213,10 @@ object AiResponseJson {
     }
 
     // getString would turn a number or a boolean into text; only a real string is accepted
+    // Null when the field is absent; anything there that is not an array is an error
+    private fun JSONObject.optionalArray(name: String): JSONArray? =
+        if (!has(name) || isNull(name)) null else getJSONArray(name)
+
     private fun JSONObject.string(name: String): String =
         opt(name) as? String ?: throw JSONException("\"$name\" is missing or not a string")
 }
