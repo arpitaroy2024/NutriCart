@@ -23,6 +23,8 @@ fun NutriStepper(
     modifier: Modifier = Modifier,
     min: Int = 1,
     max: Int = 99,
+    // Shown in place of the number, when the value stands for something else (packs of a size)
+    valueText: String? = null,
     caption: String? = null,
     decreaseDescription: String = stringResource(R.string.cd_decrease),
     increaseDescription: String = stringResource(R.string.cd_increase),
@@ -42,7 +44,7 @@ fun NutriStepper(
             enabled = value > min
         )
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(text = value.toString(), style = valueStyle, color = colors.onSurface)
+            Text(text = valueText ?: value.toString(), style = valueStyle, color = colors.onSurface)
             if (caption != null) {
                 Text(
                     text = caption,

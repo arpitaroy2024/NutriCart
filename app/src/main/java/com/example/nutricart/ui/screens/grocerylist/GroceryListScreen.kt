@@ -61,6 +61,7 @@ import com.example.nutricart.ui.components.NutriSearchField
 import com.example.nutricart.ui.components.NutriTopBar
 import com.example.nutricart.ui.components.TagChip
 import com.example.nutricart.ui.components.TagTone
+import com.example.nutricart.ui.amountLabel
 import com.example.nutricart.ui.formatTk
 import com.example.nutricart.ui.labelRes
 import com.example.nutricart.ui.theme.Elevation
@@ -314,7 +315,8 @@ private fun ItemCard(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = stringResource(R.string.list_quantity, entry.item.quantity, entry.catalog.unit),
+                        // The total amount, whatever size of pack it is bought in
+                        text = entry.amountLabel(),
                         style = NutriCartTheme.typography.caption,
                         color = colors.onSurfaceMuted
                     )

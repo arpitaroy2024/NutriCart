@@ -57,7 +57,8 @@ object AiRequestJson {
         val context = request.context
         return JSONObject()
             .put("householdSize", context.householdSize)
-            .put("monthlyBudget", context.monthlyBudget)
+            .put("budget", context.budget)
+            .put("planningPeriodDays", context.planningPeriodDays)
             .put("currency", context.currency)
             .put("allergies", JSONArray(context.allergies))
             .put("healthConditions", JSONArray(context.healthConditions))
@@ -71,6 +72,7 @@ object AiRequestJson {
                             .put("quantity", it.quantity)
                             .put("unit", it.unit)
                             .apply { if (it.mainNutrient != null) put("mainNutrient", it.mainNutrient) }
+                            .apply { if (it.amount != null) put("amount", it.amount) }
                     }
                 )
             )

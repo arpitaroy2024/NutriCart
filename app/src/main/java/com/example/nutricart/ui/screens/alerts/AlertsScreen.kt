@@ -51,6 +51,7 @@ import com.example.nutricart.ui.components.NutriTopBar
 import com.example.nutricart.ui.components.SectionLabel
 import com.example.nutricart.ui.components.TagChip
 import com.example.nutricart.ui.components.TagTone
+import com.example.nutricart.ui.formatAmount
 import com.example.nutricart.ui.formatTk
 import com.example.nutricart.ui.labelRes
 import com.example.nutricart.ui.theme.NutriCartTheme
@@ -332,8 +333,7 @@ private fun Alternatives(conflict: ItemConflict, onReplace: (Alternative) -> Uni
                     Text(
                         text = stringResource(
                             R.string.review_alternative_detail,
-                            alternative.quantity,
-                            alternative.unit,
+                            formatAmount(alternative.quantity * alternative.packAmount, alternative.packMeasure),
                             formatTk(alternative.cost)
                         ),
                         style = NutriCartTheme.typography.caption,

@@ -36,7 +36,7 @@ class FirebaseAiLiveCheck {
         task = AiTask.ReviewGroceryPlan,
         context = AiGroceryContext(
             householdSize = 4,
-            monthlyBudget = 8000,
+            budget = 8000,
             currency = "BDT",
             allergies = listOf("Peanuts"),
             healthConditions = listOf("Prediabetes"),

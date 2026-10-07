@@ -23,7 +23,7 @@
     <string name="onboarding_footnote">Takes about a minute</string>
     <string name="onboarding_storage_error">Couldn\'t read your saved data.</string>
     <string name="onboarding_1_heading">Eat well without overspending.</string>
-    <string name="onboarding_1_description">Set a monthly budget and NutriCart builds a grocery list that fits it — checked against your allergies.</string>
+    <string name="onboarding_1_description">Set a budget and NutriCart builds a grocery list that fits it — checked against your allergies.</string>
     <string name="onboarding_1_chip_left">Tk</string>
     <string name="onboarding_1_chip_right">kcal</string>
     <!-- PROVISIONAL: panes 2 and 3 are not specified in the PDFs and need product-owner approval. -->
@@ -129,7 +129,13 @@
     <string name="greeting_evening">Good evening</string>
     <string name="greeting_night">Good night</string>
     <string name="cd_open_profile">Open profile</string>
-    <string name="label_monthly_budget">Monthly budget</string>
+    <string name="label_budget">Budget</string>
+    <string name="home_period_label">Planning period</string>
+    <plurals name="period_weeks">
+        <item quantity="one">%1$d week</item>
+        <item quantity="other">%1$d weeks</item>
+    </plurals>
+    <string name="period_one_month">1 month</string>
     <string name="home_budget_context">For %1$s · %2$s</string>
     <string name="budget_prefix">Tk</string>
     <string name="budget_placeholder">Amount</string>
@@ -137,8 +143,8 @@
     <string name="error_budget_max">Enter no more than Tk %1$s</string>
     <string name="home_generate">Generate grocery list</string>
     <string name="home_empty_title">No grocery list yet</string>
-    <string name="home_empty_message">Enter a monthly budget above and NutriCart builds a list for your household.</string>
-    <string name="home_current_list">This month so far</string>
+    <string name="home_empty_message">Enter a budget above and NutriCart builds a list for your household.</string>
+    <string name="home_current_list">Your current list</string>
     <plurals name="list_item_count">
         <item quantity="one">%1$d item</item>
         <item quantity="other">%1$d items</item>
@@ -181,7 +187,6 @@
     <string name="nutrient_carbs">Carbs</string>
     <string name="nutrient_fat">Fat</string>
     <string name="nutrient_iron">Iron</string>
-    <string name="list_quantity">%1$d %2$s</string>
     <string name="cd_mark_bought">Bought: %1$s</string>
     <string name="list_estimated_total">Estimated total</string>
     <string name="list_remaining_budget">Remaining budget</string>
@@ -213,7 +218,7 @@
     <string name="add_search_placeholder">Search groceries</string>
     <string name="add_category_and_price">%1$s · %2$s</string>
     <string name="add_price_unavailable">Price unavailable for your region</string>
-    <string name="add_in_list">In your list: %1$d %2$s</string>
+    <string name="add_in_list">In your list: %1$s</string>
     <string name="add_one_more">1 more</string>
     <string name="cd_add_item">Add %1$s</string>
     <string name="cd_add_one_more">Add 1 more %1$s</string>
@@ -223,7 +228,7 @@
     <string name="add_over_budget">%1$s over budget</string>
 
     <string name="list_empty_title">No grocery list yet</string>
-    <string name="list_empty_message">Enter your monthly budget on Home to build one.</string>
+    <string name="list_empty_message">Enter your budget on Home to build one.</string>
     <string name="list_no_matches_title">No items match</string>
     <string name="list_no_matches_message">Try another search or filter.</string>
 
@@ -327,7 +332,7 @@
     <string name="review_review_again">Review again</string>
     <string name="review_alternatives_label">Suggested alternatives</string>
     <string name="review_no_alternative">No suitable alternative found.</string>
-    <string name="review_alternative_detail">%1$d %2$s · %3$s</string>
+    <string name="review_alternative_detail">%1$s · %2$s</string>
     <string name="review_replace">Replace</string>
     <string name="cd_replace_with">Replace with %1$s</string>
     <string name="review_unchecked_allergies">Typed allergies with no catalog data: %1$s. They stay on your profile but cannot be matched to items.</string>

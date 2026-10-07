@@ -111,7 +111,7 @@ class GroceryListViewModel(
                     } else {
                         // Recomputed from the current items and profile on every change
                         combine(lists.observeItems(list.id), profiles.observe()) { items, profile ->
-                            Loaded(list, items, profile, ProfileReview.analyze(items, profile))
+                            Loaded(list, items, profile, ProfileReview.analyze(items, profile, list.periodDays))
                         }
                     }
                 }

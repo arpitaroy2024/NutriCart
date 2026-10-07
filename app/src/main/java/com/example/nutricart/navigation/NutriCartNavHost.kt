@@ -19,6 +19,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.nutricart.R
+import com.example.nutricart.domain.PlanningPeriod
 import com.example.nutricart.ui.components.BottomNavTab
 import com.example.nutricart.ui.components.NutriBottomNav
 import com.example.nutricart.ui.screens.alerts.AlertsScreen
@@ -171,7 +172,7 @@ fun NutriCartNavHost(navController: NavHostController = rememberNavController())
             composable(Routes.HOME) {
                 HomeScreen(
                     onOpenProfile = { openTab(BottomNavTab.Profile) },
-                    onGenerate = { budget -> navController.navigate(Routes.generate(budget)) },
+                    onGenerate = { budget, days -> navController.navigate(Routes.generate(budget, days)) },
                     onOpenList = { openTab(BottomNavTab.GroceryList) },
                     onOpenReview = openReview
                 )
@@ -194,6 +195,10 @@ fun NutriCartNavHost(navController: NavHostController = rememberNavController())
                     navArgument(Routes.ARG_BUDGET) {
                         type = NavType.IntType
                         defaultValue = 0
+                    },
+                    navArgument(Routes.ARG_DAYS) {
+                        type = NavType.IntType
+                        defaultValue = PlanningPeriod.DEFAULT_DAYS
                     }
                 )
             ) {

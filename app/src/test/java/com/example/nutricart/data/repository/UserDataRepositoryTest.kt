@@ -143,10 +143,14 @@ class UserDataRepositoryTest {
         val items = env.catalog.items()
         env.catalog.items()
 
-        assertEquals(40, items.size)
-        assertEquals(40, env.database.catalogDao().itemCount())
+        // The forty original rows plus a smaller pack for each of the thirty-eight sold by
+        // the kilo or the litre. Forty packs are offered: one per product.
+        assertEquals(78, items.size)
+        assertEquals(78, env.database.catalogDao().itemCount())
+        assertEquals(40, env.catalog.offeredItems().size)
+        assertEquals(40, env.catalog.offeredItems().map { it.name }.toSet().size)
         Regions.all.forEach { region ->
-            assertEquals("prices in $region", 40, env.catalog.prices(region).size)
+            assertEquals("prices in $region", 78, env.catalog.prices(region).size)
         }
     }
 

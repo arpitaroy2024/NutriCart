@@ -32,6 +32,7 @@ import java.io.File
 
 // Phase 6: editing a saved list. Catalog ids used: 5 lentils (Tk 160), 8 eggs (14),
 // 20 potato (35), 22 tomato (60), 28 banana (8), in Rangpur Division.
+// The item picker offers tomato as a 250 g pack, id 122, at Tk 15.
 @RunWith(RobolectricTestRunner::class)
 class ListEditingTest {
 
@@ -269,9 +270,9 @@ class ListEditingTest {
         assertTrue(listScreen().state.value.items.isEmpty())
 
         val picker = picker()
-        picker.onAdd(22)
+        picker.onAdd(122)
         env.awaitUntil { viewModel.state.value.items.size == 1 }
-        assertEquals(60, viewModel.state.value.totals.total)
+        assertEquals(15, viewModel.state.value.totals.total)
     }
 
     // Add
@@ -279,34 +280,34 @@ class ListEditingTest {
     @Test
     fun add_newItemJoinsTheListWithOneUnitAtTheRegionsPrice() {
         val viewModel = picker()
-        val tomato = viewModel.state.value.entries.first { it.item.id == 22L }
+        val tomato = viewModel.state.value.entries.first { it.item.id == 122L }
         assertEquals(0, tomato.quantityInList)
-        assertEquals(60, tomato.price)
+        assertEquals(15, tomato.price)
 
-        viewModel.onAdd(22)
-        env.awaitUntil { viewModel.state.value.entries.first { it.item.id == 22L }.quantityInList == 1 }
+        viewModel.onAdd(122)
+        env.awaitUntil { viewModel.state.value.entries.first { it.item.id == 122L }.quantityInList == 1 }
 
-        val added = stored().first { it.catalog.id == 22L }.item
+        val added = stored().first { it.catalog.id == 122L }.item
         assertEquals(1, added.quantity)
-        assertEquals(60, added.unitPrice)
+        assertEquals(15, added.unitPrice)
         assertFalse(added.bought)
         assertEquals(listId, added.listId)
-        assertEquals(940, viewModel.state.value.totals.total)
+        assertEquals(895, viewModel.state.value.totals.total)
         assertEquals(4, stored().size)
     }
 
     @Test
     fun add_priceComesFromTheProfilesRegion() {
         runBlocking { env.profiles.save("Dhaka Division", 4, emptySet(), emptySet()) }
-        val dhaka = DemoCatalogSeed.prices.first { it.catalogItemId == 22L && it.region == "Dhaka Division" }.price
-        assertTrue(dhaka != 60)
+        val dhaka = DemoCatalogSeed.prices.first { it.catalogItemId == 122L && it.region == "Dhaka Division" }.price
+        assertTrue(dhaka != 15)
 
         val viewModel = picker()
-        viewModel.onAdd(22)
-        env.awaitUntil { viewModel.state.value.entries.first { it.item.id == 22L }.quantityInList == 1 }
+        viewModel.onAdd(122)
+        env.awaitUntil { viewModel.state.value.entries.first { it.item.id == 122L }.quantityInList == 1 }
 
-        assertEquals(dhaka, viewModel.state.value.entries.first { it.item.id == 22L }.price)
-        assertEquals(dhaka, stored().first { it.catalog.id == 22L }.item.unitPrice)
+        assertEquals(dhaka, viewModel.state.value.entries.first { it.item.id == 122L }.price)
+        assertEquals(dhaka, stored().first { it.catalog.id == 122L }.item.unitPrice)
     }
 
     @Test
@@ -328,22 +329,22 @@ class ListEditingTest {
     @Test
     fun add_itemWithoutAPriceInTheRegionCannotBeAdded() {
         env.database.openHelper.writableDatabase.execSQL(
-            "DELETE FROM region_prices WHERE catalogItemId = 22 AND region = 'Rangpur Division'"
+            "DELETE FROM region_prices WHERE catalogItemId = 122 AND region = 'Rangpur Division'"
         )
 
         val viewModel = picker()
-        val tomato = viewModel.state.value.entries.first { it.item.id == 22L }
+        val tomato = viewModel.state.value.entries.first { it.item.id == 122L }
         // It is still listed, marked as having no price, and cannot be added
         assertNull(tomato.price)
         assertFalse(tomato.canAdd)
 
-        viewModel.onAdd(22)
+        viewModel.onAdd(122)
         Thread.sleep(200)
         env.awaitUntil { true }
 
-        assertNull(storedQuantity(22))
+        assertNull(storedQuantity(122))
         assertThrows(IllegalArgumentException::class.java) {
-            runBlocking { env.lists.addItem(listId, 22, 0) }
+            runBlocking { env.lists.addItem(listId, 122, 0) }
         }
     }
 
@@ -543,15 +544,15 @@ class ListEditingTest {
         viewModel.onQuantityStep(viewModel.item(5).id, +1)
         env.awaitUntil { viewModel.quantity(5) == 3 }
         val picker = picker(listId)
-        picker.onAdd(22)
-        env.awaitUntil { picker.state.value.entries.first { it.item.id == 22L }.quantityInList == 1 }
+        picker.onAdd(122)
+        env.awaitUntil { picker.state.value.entries.first { it.item.id == 122L }.quantityInList == 1 }
 
         assertEquals(3, storedQuantity(5, listId))
-        assertEquals(1, storedQuantity(22, listId))
+        assertEquals(1, storedQuantity(122, listId))
         // The newer list is untouched
         assertEquals(7, storedQuantity(5, newer))
         assertEquals(1, stored(newer).size)
-        assertNull(storedQuantity(22, newer))
+        assertNull(storedQuantity(122, newer))
     }
 
     @Test
@@ -585,7 +586,7 @@ class ListEditingTest {
         viewModel.onQuantityStep(lentils.id, +5)
         viewModel.onRemove(lentils.id)
         val picker = picker(listId)
-        picker.onAdd(22)
+        picker.onAdd(122)
         runBlocking {
             env.lists.changeQuantity(lentils.id, +5)
             assertNull(env.lists.removeItem(lentils.id))

@@ -19,6 +19,9 @@ enum class FoodCategory { Protein, Grains, Veg, Fruit, Dairy, Oils, Pantry }
 // The dominant nutrient shown as an item's tag
 enum class NutrientTag { Protein, Carbs, Fat, Iron }
 
+// What one catalog pack is measured in. The constant names are stored, so do not rename them.
+enum class PackMeasure { Gram, Millilitre, Piece }
+
 object Regions {
     val all = listOf(
         "Barishal Division",

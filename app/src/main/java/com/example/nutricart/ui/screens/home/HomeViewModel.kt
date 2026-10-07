@@ -8,6 +8,7 @@ import com.example.nutricart.data.repository.GroceryListRepository
 import com.example.nutricart.data.repository.ProfileRepository
 import com.example.nutricart.domain.BudgetError
 import com.example.nutricart.domain.BudgetRules
+import com.example.nutricart.domain.PlanningPeriod
 import com.example.nutricart.domain.nutrition.NutritionAnalyzer
 import com.example.nutricart.ui.screens.alerts.ProfileReview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,14 +45,19 @@ data class HomeUiState(
     val budget: String = "",
     // True once the user has left the field or tried to generate
     val budgetChecked: Boolean = false,
+    // The days the next list is planned for; the budget above is for that period
+    val periodDays: Int = PlanningPeriod.DEFAULT_DAYS,
     // The latest list, or null while the account has none
     val currentList: ListSummary? = null,
     // Set when Generate is tapped with a valid budget; the screen opens the processing
-    // screen with this amount and clears it
+    // screen with this amount and periodDays, and clears it
     val generateRequest: Int? = null
 ) {
+    // The smallest budget accepted for the chosen period
+    val minimumBudget: Int get() = BudgetRules.minimum(periodDays)
+
     val budgetError: BudgetError?
-        get() = if (budgetChecked) BudgetRules.validate(budget) else null
+        get() = if (budgetChecked) BudgetRules.validate(budget, periodDays) else null
 
     // Disabled only while the field is blank; an out-of-range amount is explained on tap
     val canGenerate: Boolean get() = budget.isNotEmpty()
@@ -66,7 +72,12 @@ class HomeViewModel(
 ) : ViewModel() {
 
     // The typed budget is kept in saved state so it survives rotation and process death
-    private val _state = MutableStateFlow(HomeUiState(budget = savedState[KEY_BUDGET] ?: ""))
+    private val _state = MutableStateFlow(
+        HomeUiState(
+            budget = savedState[KEY_BUDGET] ?: "",
+            periodDays = PlanningPeriod.normalize(savedState[KEY_PERIOD])
+        )
+    )
     val state: StateFlow<HomeUiState> = _state.asStateFlow()
 
     init {
@@ -96,9 +107,10 @@ class HomeViewModel(
                                 itemCount = items.size,
                                 total = items.sumOf { it.item.quantity * it.item.unitPrice },
                                 budget = list.budget,
-                                nutritionScore = NutritionAnalyzer.analyze(items, profile?.householdSize ?: 0)?.score?.value,
+                                nutritionScore = NutritionAnalyzer
+                                    .analyze(items, profile?.householdSize ?: 0, list.periodDays)?.score?.value,
                                 listId = list.id,
-                                reviewCount = ProfileReview.analyze(items, profile)?.needsReview ?: 0
+                                reviewCount = ProfileReview.analyze(items, profile, list.periodDays)?.needsReview ?: 0
                             )
                         }
                     }
@@ -115,6 +127,13 @@ class HomeViewModel(
 
     fun onBudgetFocusLost() = _state.update { it.copy(budgetChecked = it.budget.isNotEmpty()) }
 
+    // Only the offered periods can be chosen
+    fun onPeriodSelected(days: Int) {
+        if (days !in PlanningPeriod.options) return
+        savedState[KEY_PERIOD] = days
+        _state.update { it.copy(periodDays = days) }
+    }
+
     // A valid budget asks the screen to start generation; an invalid one shows its error
     fun onGenerate() {
         val current = _state.value
@@ -122,7 +141,7 @@ class HomeViewModel(
         _state.update {
             it.copy(
                 budgetChecked = true,
-                generateRequest = current.budget.toInt().takeIf { BudgetRules.isValid(current.budget) }
+                generateRequest = current.budget.toInt().takeIf { BudgetRules.isValid(current.budget, current.periodDays) }
             )
         }
     }
@@ -131,5 +150,6 @@ class HomeViewModel(
 
     private companion object {
         const val KEY_BUDGET = "budget"
+        const val KEY_PERIOD = "periodDays"
     }
 }

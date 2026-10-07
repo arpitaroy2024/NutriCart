@@ -52,7 +52,7 @@ object NutritionReference {
     // For one person for one day
     val daily = NutritionFacts(energyKcal = 2000.0, proteinG = 70.0, carbsG = 300.0, fatG = 60.0, ironMg = 18.0)
 
-    // A list is built from a monthly budget, so it is compared with a month's needs
+    // The days a list covers when its own planning period is not given: a month
     const val DAYS_COVERED = 30
 
     // Below this share of the reference a nutrient counts as a gap

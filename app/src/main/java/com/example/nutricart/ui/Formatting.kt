@@ -2,10 +2,13 @@ package com.example.nutricart.ui
 
 import androidx.annotation.StringRes
 import com.example.nutricart.R
+import com.example.nutricart.data.local.CatalogItemEntity
+import com.example.nutricart.data.local.ListItemWithCatalog
 import com.example.nutricart.data.model.Allergen
 import com.example.nutricart.data.model.FoodCategory
 import com.example.nutricart.data.model.HealthCondition
 import com.example.nutricart.data.model.NutrientTag
+import com.example.nutricart.data.model.PackMeasure
 import com.example.nutricart.ui.components.ThousandsVisualTransformation
 import kotlin.math.abs
 import java.util.Calendar
@@ -20,6 +23,29 @@ fun initialsOf(name: String): String =
 // An amount in taka with thousands separators: "Tk 10,850", "-Tk 250"
 fun formatTk(amount: Int): String =
     (if (amount < 0) "-" else "") + "Tk " + ThousandsVisualTransformation.format(abs(amount.toLong()).toString())
+
+/*
+ * A physical amount as a shopper would say it: "250 g", "1 kg", "1.5 kg", "500 ml", "1.5 L",
+ * "6 pcs". Grams and millilitres switch to kilos and litres from a thousand up, with only
+ * the decimals that are needed. The one place amounts are put into words.
+ */
+fun formatAmount(amount: Int, measure: PackMeasure): String = when (measure) {
+    PackMeasure.Gram -> scaledAmount(amount, "g", "kg")
+    PackMeasure.Millilitre -> scaledAmount(amount, "ml", "L")
+    PackMeasure.Piece -> "$amount pcs"
+}
+
+private fun scaledAmount(amount: Int, small: String, large: String): String {
+    if (amount < 1000) return "$amount $small"
+    val fraction = (amount % 1000).toString().padStart(3, '0').trimEnd('0')
+    return (amount / 1000).toString() + (if (fraction.isEmpty()) "" else ".$fraction") + " $large"
+}
+
+// How much a number of packs of this item comes to: 3 packs of 100 g is "300 g"
+fun CatalogItemEntity.amountLabel(quantity: Int): String = formatAmount(quantity * packAmount, packMeasure)
+
+// How much of the item the list holds
+fun ListItemWithCatalog.amountLabel(): String = catalog.amountLabel(item.quantity)
 
 // The name used in the greeting: "Arpita Roy" -> "Arpita"
 fun firstNameOf(name: String): String = name.trim().substringBefore(' ')

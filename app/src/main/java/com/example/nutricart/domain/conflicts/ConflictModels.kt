@@ -2,6 +2,7 @@ package com.example.nutricart.domain.conflicts
 
 import com.example.nutricart.data.model.Allergen
 import com.example.nutricart.data.model.HealthCondition
+import com.example.nutricart.data.model.PackMeasure
 
 // What a concern is about
 enum class ConcernType {
@@ -69,8 +70,11 @@ data class Alternative(
     val name: String,
     val unit: String,
     val unitPrice: Int,
-    // How many units give about the same weight as the flagged item's quantity
-    val quantity: Int
+    // How many packs give about the same weight as the flagged item's quantity
+    val quantity: Int,
+    // The size of one pack, so the amount can be shown as a weight or volume
+    val packAmount: Int = 1000,
+    val packMeasure: PackMeasure = PackMeasure.Gram
 ) {
     val cost: Int get() = unitPrice * quantity
 }

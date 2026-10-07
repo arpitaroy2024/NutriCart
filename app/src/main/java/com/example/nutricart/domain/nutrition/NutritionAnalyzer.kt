@@ -48,12 +48,16 @@ data class NutritionAnalysis(
 object NutritionAnalyzer {
 
     // Null when there is nothing to analyse: an empty list, no household, or no item with usable data
-    fun analyze(entries: List<ListItemWithCatalog>, householdSize: Int): NutritionAnalysis? {
-        if (householdSize <= 0) return null
+    // days is how long the list is meant to last: the list's own planning period
+    fun analyze(
+        entries: List<ListItemWithCatalog>,
+        householdSize: Int,
+        days: Int = NutritionReference.DAYS_COVERED
+    ): NutritionAnalysis? {
+        if (householdSize <= 0 || days <= 0) return null
         val list = NutritionCalculator.totals(entries)
         if (list.countedItems == 0) return null
 
-        val days = NutritionReference.DAYS_COVERED
         val perPersonPerDay = list.perPersonPerDay(householdSize, days)
         val coverage = NutritionScorer.coverage(perPersonPerDay)
         val shares = NutritionScorer.macroShares(perPersonPerDay)

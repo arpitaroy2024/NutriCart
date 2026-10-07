@@ -60,7 +60,7 @@ class AlertsViewModel(
                                 loading = false,
                                 list = list,
                                 itemCount = items.size,
-                                analysis = ProfileReview.analyzeWithAlternatives(items, profile, catalog)
+                                analysis = ProfileReview.analyzeWithAlternatives(items, profile, catalog, list.periodDays)
                             )
                         }
                     }

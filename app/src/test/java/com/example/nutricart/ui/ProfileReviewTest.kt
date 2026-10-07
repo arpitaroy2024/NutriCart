@@ -8,6 +8,7 @@ import com.example.nutricart.data.TestEnvironment
 import com.example.nutricart.data.ai.FakeAiEngine
 import com.example.nutricart.data.model.Allergen
 import com.example.nutricart.data.model.HealthCondition
+import com.example.nutricart.data.model.PackMeasure
 import com.example.nutricart.data.repository.NewListItem
 import com.example.nutricart.domain.conflicts.Alternative
 import com.example.nutricart.domain.conflicts.ConcernReason
@@ -113,9 +114,9 @@ class ProfileReviewTest {
         val peanuts = analysis.forItem(itemId(17))!!
         assertEquals(Allergen.Peanuts, peanuts.concerns.single().allergen)
         assertEquals(Severity.High, peanuts.severity)
-        // Lentils are on the list already, so they are not offered
-        assertEquals(listOf(6L, 9L, 7L), peanuts.alternatives.map { it.catalogItemId })
-        assertEquals(Alternative(6, "Mung dal", "kg", 170, 2), peanuts.alternatives.first())
+        // Lentils are on the list already, so they are not offered. The alternatives are the packs offered now: eight 250 g packs of mung dal for the 2 kg of peanuts.
+        assertEquals(listOf(106L, 109L, 107L), peanuts.alternatives.map { it.catalogItemId })
+        assertEquals(Alternative(106, "Mung dal", "250 g", 43, 8, 250, PackMeasure.Gram), peanuts.alternatives.first())
 
         val sugar = analysis.forItem(itemId(38))!!
         assertEquals(ConcernReason.ConcentratedCarbohydrate, sugar.concerns.single().reason)
@@ -258,9 +259,10 @@ class ProfileReviewTest {
         val items = stored()
         assertEquals(4, items.size)
         assertTrue(items.none { it.catalog.id == 17L })
-        val added = items.single { it.catalog.id == 6L }.item
-        assertEquals(2, added.quantity)
-        assertEquals(170, added.unitPrice)
+        val added = items.single { it.catalog.id == 106L }.item
+        // Eight 250 g packs for the 2 kg of peanuts, at the pack's price
+        assertEquals(8, added.quantity)
+        assertEquals(43, added.unitPrice)
         assertFalse(added.bought)
         assertFalse(added.alertOverridden)
         // Mung dal raises nothing; sugar is still there
@@ -325,7 +327,7 @@ class ProfileReviewTest {
         val before = viewModel.analysis().forItem(itemId(17))!!
 
         runBlocking { env.lists.changeQuantity(itemId(17), +3) }
-        env.awaitUntil { viewModel.analysis().forItem(itemId(17))!!.alternatives.first().quantity == 5 }
+        env.awaitUntil { viewModel.analysis().forItem(itemId(17))!!.alternatives.first().quantity == 20 }
 
         val after = viewModel.analysis().forItem(itemId(17))!!
         assertEquals(before.concerns, after.concerns)
@@ -453,8 +455,8 @@ class ProfileReviewTest {
         assertEquals(listOf("Eggs"), own.analysis().items.map { it.itemName })
         assertTrue(own.analysis().unmatchedCustomAllergies.isEmpty())
         assertTrue(own.analysis().customConditions.isEmpty())
-        // Alternatives are priced for Dhaka: rui fish at 108% of 350
-        assertTrue(own.analysis().items.single().alternatives.any { it.catalogItemId == 11L && it.unitPrice == 378 })
+        // Alternatives are priced for Dhaka: a 250 g pack of rui fish at 108% of Tk 88
+        assertTrue(own.analysis().items.single().alternatives.any { it.catalogItemId == 111L && it.unitPrice == 95 })
         own.onKeepAnyway(itemId(8, theirs))
         env.awaitUntil { own.analysis().needsReview == 0 }
 
@@ -476,7 +478,7 @@ class ProfileReviewTest {
 
     @Test
     fun nothingNewIsStored_andTheDatabaseVersionIsUnchanged() {
-        assertEquals(3, env.database.openHelper.readableDatabase.version)
+        assertEquals(5, env.database.openHelper.readableDatabase.version)
 
         val viewModel = review()
         val before = stored()

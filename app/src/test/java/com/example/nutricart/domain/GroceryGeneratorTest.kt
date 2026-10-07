@@ -40,7 +40,14 @@ class GroceryGeneratorTest {
         return result as GenerationResult.Success
     }
 
-    private fun GenerationResult.Success.quantityOf(id: Long) = items.firstOrNull { it.catalogItemId == id }?.quantity ?: 0
+    // Products are named by their original catalog ids; a list holds the pack now offered for them
+    private fun pack(id: Long) = DemoCatalogSeed.offeredId(id)
+
+    private fun GenerationResult.Success.quantityOf(id: Long) =
+        items.firstOrNull { it.catalogItemId == pack(id) }?.quantity ?: 0
+
+    // How much of the product the list holds, in grams, millilitres or pieces
+    private fun GenerationResult.Success.amountOf(id: Long) = quantityOf(id) * byId.getValue(pack(id)).packAmount
 
     private fun GenerationResult.Success.categories() = items.map { byId.getValue(it.catalogItemId).category }.toSet()
 
@@ -155,9 +162,12 @@ class GroceryGeneratorTest {
     fun householdOfFour_getsThePerPersonAmountTimesFour() {
         val list = success(request(budget = 200_000, household = 4))
 
-        assertEquals(4, list.quantityOf(5))    // lentils, 1 kg each
-        assertEquals(48, list.quantityOf(8))   // eggs, 12 each
-        assertEquals(8, list.quantityOf(20))   // potato, 2 kg each
+        assertEquals(4_000, list.amountOf(5))  // lentils, 1 kg each
+        assertEquals(48, list.amountOf(8))     // eggs, 12 each
+        assertEquals(8_000, list.amountOf(20)) // potato, 2 kg each
+        // Bought as whole packs: sixteen 250 g packs of lentils, sixteen half kilos of potato
+        assertEquals(16, list.quantityOf(5))
+        assertEquals(16, list.quantityOf(20))
     }
 
     @Test
@@ -208,29 +218,29 @@ class GroceryGeneratorTest {
     @Test
     fun itemWithoutAPriceInTheRegion_isLeftOutNotGuessed() {
         // No price for lentils (5), eggs (8) or milk (31)
-        val prices = pricesFor("Rangpur Division") - setOf(5L, 8L, 31L)
+        val prices = pricesFor("Rangpur Division") - setOf(pack(5), pack(8), pack(31))
 
         val list = success(request(prices = prices))
         val ids = list.items.map { it.catalogItemId }
 
-        assertFalse(5L in ids || 8L in ids || 31L in ids)
+        assertFalse(pack(5) in ids || pack(8) in ids || pack(31) in ids)
         // Mung dal, the slot's second choice, stands in for lentils
-        assertTrue(6L in ids)
+        assertTrue(pack(6) in ids)
         assertTrue(list.items.all { it.unitPrice == prices.getValue(it.catalogItemId) })
     }
 
     @Test
     fun zeroOrNegativePrices_areTreatedAsMissing() {
-        val prices = pricesFor("Rangpur Division") + mapOf(20L to 0, 21L to -5)
+        val prices = pricesFor("Rangpur Division") + mapOf(pack(20) to 0, pack(21) to -5)
 
         val ids = success(request(prices = prices)).items.map { it.catalogItemId }
 
-        assertFalse(20L in ids || 21L in ids)
+        assertFalse(pack(20) in ids || pack(21) in ids)
     }
 
     @Test
     fun onlyCatalogItemsWithPricesAreEverChosen() {
-        val smallCatalog = catalog.filter { it.id in setOf(2L, 5L, 8L, 20L, 21L, 33L) }
+        val smallCatalog = catalog.filter { it.id in setOf(2L, 5L, 8L, 20L, 21L, 33L).map(::pack) }
 
         val list = success(request(catalog = smallCatalog))
 
@@ -325,7 +335,10 @@ class GroceryGeneratorTest {
         )
         // A basket that also asks for the two items carrying a demo "Hypertension" tag
         val template = DemoCatalogSeed.basket +
-            listOf(BasketSlot(1, listOf(15), perPerson = 0.5), BasketSlot(1, listOf(40), perPerson = 0.5))
+            listOf(
+                BasketSlot(1, listOf(DemoCatalogSeed.offeredId(15)), amountPerPerson = 500.0),
+                BasketSlot(1, listOf(DemoCatalogSeed.offeredId(40)), amountPerPerson = 500.0)
+            )
 
         for (budget in listOf(3_000, 12_000, 200_000)) {
             val plain = success(request(budget = budget, template = template))

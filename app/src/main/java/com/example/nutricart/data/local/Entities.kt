@@ -1,5 +1,6 @@
 package com.example.nutricart.data.local
 
+import androidx.room.ColumnInfo
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.ForeignKey
@@ -10,6 +11,8 @@ import com.example.nutricart.data.model.Allergen
 import com.example.nutricart.data.model.FoodCategory
 import com.example.nutricart.data.model.HealthCondition
 import com.example.nutricart.data.model.NutrientTag
+import com.example.nutricart.data.model.PackMeasure
+import com.example.nutricart.domain.PlanningPeriod
 
 // Local account. Only the salted hash of the password is stored, both hex-encoded.
 @Entity(tableName = "accounts", indices = [Index(value = ["email"], unique = true)])
@@ -62,10 +65,13 @@ data class GroceryListEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val accountId: Long,
     val budget: Int,
-    val createdAt: Long
+    val createdAt: Long,
+    // The days the list was planned for: 7, 14, 21 or 30. Lists from before version 4 are 30.
+    @ColumnInfo(defaultValue = "30") val periodDays: Int = PlanningPeriod.DEFAULT_DAYS
 )
 
-// A monthly budget entered on Home, linked to the list it produced. Amounts are in Tk.
+// A budget entered on Home, linked to the list it produced. Amounts are in Tk. month is the
+// calendar month it was entered in, whatever period the list is for.
 @Entity(
     tableName = "budgets",
     foreignKeys = [
@@ -127,8 +133,10 @@ data class CatalogItemEntity(
     @PrimaryKey val id: Long,
     val name: String,
     val category: FoodCategory,
-    // Unit a quantity is counted in: "kg", "L" or "pcs"
+    // One row is one purchasable pack, and a list quantity is a number of these packs.
+    // unit is the pack's label, used for its price: "kg", "L", "pcs", "250 g", "500 ml".
     val unit: String,
+    // The weight of one pack in grams, whatever it is measured in. Nutrition uses this.
     val gramsPerUnit: Int,
     val nutrientTag: NutrientTag,
     val caloriesPer100g: Double,
@@ -139,7 +147,13 @@ data class CatalogItemEntity(
     val allergens: Set<Allergen>,
     // Hand-set demo tags with no nutrition figure behind them. Stored, but read by nothing:
     // neither generation nor the profile review treats them as evidence.
-    val flaggedConditions: Set<HealthCondition>
+    val flaggedConditions: Set<HealthCondition>,
+    // The size of one pack in its own measure: 1000 g for "kg", 500 ml, 1 piece
+    @ColumnInfo(defaultValue = "1000") val packAmount: Int = 1000,
+    @ColumnInfo(defaultValue = "Gram") val packMeasure: PackMeasure = PackMeasure.Gram,
+    // False for a pack that a smaller one has replaced. It stays so lists that hold it still
+    // work, but generation, the item picker and suggested alternatives no longer offer it.
+    @ColumnInfo(defaultValue = "1") val offered: Boolean = true
 )
 
 @Entity(

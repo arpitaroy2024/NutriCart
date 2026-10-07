@@ -315,7 +315,7 @@ class AppShellNavigationTest {
         awaitRoute(Routes.HOME)
         assertEquals(listOf(Routes.HOME), backStackRoutes())
         // Home now shows the list, and the typed budget is still there
-        awaitText("THIS MONTH SO FAR")
+        awaitText("YOUR CURRENT LIST")
         composeRule.onNodeWithText("View list").assertExists()
 
         // The List tab shows the same list, as a tab root
@@ -379,13 +379,13 @@ class AppShellNavigationTest {
         awaitText("Tomato")
         composeRule.onAllNodesWithText("Potato").assertCountEquals(0)
         composeRule.onNodeWithContentDescription("Add Tomato").performClick()
-        waitFor("tomato to be added") { quantity(22) == 1 }
-        awaitText("In your list: 1 kg")
+        waitFor("tomato to be added") { quantity(122) == 1 }
+        awaitText("In your list: 250 g")
         composeRule.onNodeWithContentDescription("Add 1 more Tomato").performClick()
-        waitFor("tomato to be 2") { quantity(22) == 2 }
-        assertEquals(1, stored().count { it.catalog.id == 22L })
-        awaitText("Total Tk 1,000")
-        awaitText("Tk 0 left")
+        waitFor("tomato to be 2") { quantity(122) == 2 }
+        assertEquals(1, stored().count { it.catalog.id == 122L })
+        awaitText("Total Tk 910")
+        awaitText("Tk 90 left")
 
         composeRule.onAllNodes(hasSetTextAction()).onFirst().performTextInput("zzz")
         awaitText("No groceries found")
@@ -402,14 +402,14 @@ class AppShellNavigationTest {
         awaitRoute(Routes.LIST)
         assertEquals(listOf(Routes.HOME, Routes.LIST), backStackRoutes())
         awaitText("Tomato")
-        awaitText("Tk 1,000")
+        awaitText("Tk 910")
         composeRule.onNodeWithText("4 items").assertExists()
 
         // And Home's card follows
         composeRule.onNodeWithText("Home").performClick()
         awaitRoute(Routes.HOME)
         awaitText("4 items")
-        assertEquals(1_000, stored().sumOf { it.item.quantity * it.item.unitPrice })
+        assertEquals(910, stored().sumOf { it.item.quantity * it.item.unitPrice })
     }
 
     @Test
@@ -493,8 +493,8 @@ class AppShellNavigationTest {
         composeRule.runOnUiThread { navController.popBackStack() }
         awaitRoute(Routes.NUTRITION)
         awaitText("Food groups on the list: 3 of 5")
-        // 2,150 kcal more chicken and 230 kcal of spinach: 93,800 kcal
-        composeRule.onNodeWithText("782 of 2,000 kcal").performScrollTo().assertExists()
+        // 2,150 kcal more chicken and a 250 g pack of spinach, about 58 kcal: 93,628 kcal
+        composeRule.onNodeWithText("780 of 2,000 kcal").performScrollTo().assertExists()
         assert(score() != first) { "the score should have changed" }
         composeRule.onNodeWithText(score().toString()).performScrollTo().assertExists()
 
@@ -554,7 +554,7 @@ class AppShellNavigationTest {
         composeRule.onNodeWithText("Peanuts").assertExists()
         composeRule.onNodeWithText("Contains Peanut, an allergen listed on your profile.").assertExists()
         composeRule.onNodeWithText("Mung dal").performScrollTo().assertExists()
-        composeRule.onNodeWithText("2 kg · Tk 340").performScrollTo().assertExists()
+        composeRule.onNodeWithText("2 kg · Tk 344").performScrollTo().assertExists()
         // Rice and lentils are not flagged
         composeRule.onAllNodesWithText("White rice (Miniket)").assertCountEquals(0)
         composeRule.onAllNodesWithText("NUTRITION CONSIDERATIONS").assertCountEquals(0)
@@ -573,7 +573,7 @@ class AppShellNavigationTest {
 
         // Replace with the first suggested alternative
         composeRule.onNodeWithContentDescription("Replace with Mung dal").performScrollTo().performClick()
-        waitFor("peanuts to be replaced") { catalogIds() == listOf(2L, 5L, 6L) }
+        waitFor("peanuts to be replaced") { catalogIds() == listOf(2L, 5L, 106L) }
         awaitText("No profile conflicts detected in this list.")
         composeRule.onAllNodesWithText("ALLERGEN MATCHES").assertCountEquals(0)
 
@@ -624,7 +624,7 @@ class AppShellNavigationTest {
             composeRule.onAllNodesWithText("Lentils (Masoor)").fetchSemanticsNodes().isEmpty()
         }
         composeRule.onNodeWithContentDescription("Add Peanuts").performClick()
-        waitFor("peanuts to be added") { items().any { it.catalog.id == 17L } }
+        waitFor("peanuts to be added") { items().any { it.catalog.id == 117L } }
         composeRule.runOnUiThread { navController.popBackStack() }
         awaitRoute(Routes.LIST_EDIT)
         composeRule.runOnUiThread { navController.popBackStack() }
@@ -654,7 +654,7 @@ class AppShellNavigationTest {
 
         // Remove the item: the warning goes everywhere
         runBlocking {
-            container.groceryListRepository.removeItem(items().first { it.catalog.id == 17L }.item.id)
+            container.groceryListRepository.removeItem(items().first { it.catalog.id == 117L }.item.id)
         }
         awaitText("No profile conflicts detected in this list.")
         composeRule.onNodeWithText("Home").performClick()
@@ -692,7 +692,7 @@ class AppShellNavigationTest {
         composeRule.onNodeWithText("List").performClick()
 
         awaitRoute(Routes.LIST)
-        awaitText("Enter your monthly budget on Home to build one.")
+        awaitText("Enter your budget on Home to build one.")
         composeRule.onAllNodesWithText("Edit list").assertCountEquals(0)
     }
 

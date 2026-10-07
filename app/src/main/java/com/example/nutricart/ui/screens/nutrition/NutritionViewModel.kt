@@ -64,8 +64,8 @@ class NutritionViewModel(
                                 loading = false,
                                 list = list,
                                 itemCount = items.size,
-                                analysis = NutritionAnalyzer.analyze(items, profile?.householdSize ?: 0),
-                                review = ProfileReview.analyze(items, profile)
+                                analysis = NutritionAnalyzer.analyze(items, profile?.householdSize ?: 0, list.periodDays),
+                                review = ProfileReview.analyze(items, profile, list.periodDays)
                             )
                         }
                     }

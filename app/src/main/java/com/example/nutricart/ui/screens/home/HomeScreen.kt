@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -47,9 +49,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.nutricart.R
 import com.example.nutricart.domain.BudgetError
 import com.example.nutricart.domain.BudgetRules
+import com.example.nutricart.domain.PlanningPeriod
 import com.example.nutricart.ui.AppViewModelFactory
 import com.example.nutricart.ui.DayPeriod
 import com.example.nutricart.ui.components.EmptyState
+import com.example.nutricart.ui.components.FilterTagChip
 import com.example.nutricart.ui.components.NutriCard
 import com.example.nutricart.ui.components.NutriFilledButton
 import com.example.nutricart.ui.components.NutriTextField
@@ -67,7 +71,8 @@ import com.example.nutricart.ui.theme.Spacing
 @Composable
 fun HomeScreen(
     onOpenProfile: () -> Unit,
-    onGenerate: (Int) -> Unit,
+    // The budget and the days the list is planned for
+    onGenerate: (Int, Int) -> Unit,
     onOpenList: () -> Unit,
     onOpenReview: (Long) -> Unit,
     viewModel: HomeViewModel = viewModel(factory = AppViewModelFactory)
@@ -77,7 +82,7 @@ fun HomeScreen(
     LaunchedEffect(state.generateRequest) {
         state.generateRequest?.let { budget ->
             viewModel.onGenerateHandled()
-            onGenerate(budget)
+            onGenerate(budget, state.periodDays)
         }
     }
 
@@ -94,6 +99,7 @@ fun HomeScreen(
         period = period,
         onBudgetChange = viewModel::onBudgetChange,
         onBudgetFocusLost = viewModel::onBudgetFocusLost,
+        onPeriodSelected = viewModel::onPeriodSelected,
         onGenerate = viewModel::onGenerate,
         onOpenProfile = onOpenProfile,
         onOpenList = onOpenList,
@@ -107,6 +113,7 @@ private fun HomeContent(
     period: DayPeriod,
     onBudgetChange: (String) -> Unit,
     onBudgetFocusLost: () -> Unit,
+    onPeriodSelected: (Int) -> Unit,
     onGenerate: () -> Unit,
     onOpenProfile: () -> Unit,
     onOpenList: () -> Unit,
@@ -145,6 +152,7 @@ private fun HomeContent(
                 state = state,
                 onBudgetChange = onBudgetChange,
                 onBudgetFocusLost = onBudgetFocusLost,
+                onPeriodSelected = onPeriodSelected,
                 onGenerate = onGenerate
             )
 
@@ -195,6 +203,7 @@ private fun BudgetCard(
     state: HomeUiState,
     onBudgetChange: (String) -> Unit,
     onBudgetFocusLost: () -> Unit,
+    onPeriodSelected: (Int) -> Unit,
     onGenerate: () -> Unit
 ) {
     val colors = NutriCartTheme.colors
@@ -204,7 +213,7 @@ private fun BudgetCard(
     NutriCard(modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
-                SectionLabel(text = stringResource(R.string.label_monthly_budget))
+                SectionLabel(text = stringResource(R.string.label_budget))
                 // What the list will be sized and priced for
                 if (state.householdSize != null && state.region != null) {
                     Text(
@@ -232,7 +241,7 @@ private fun BudgetCard(
                 errorMessage = when (state.budgetError) {
                     BudgetError.BelowMinimum -> stringResource(
                         R.string.error_budget_min,
-                        ThousandsVisualTransformation.format(BudgetRules.MIN.toString())
+                        ThousandsVisualTransformation.format(state.minimumBudget.toString())
                     )
                     BudgetError.AboveMaximum -> stringResource(
                         R.string.error_budget_max,
@@ -244,6 +253,24 @@ private fun BudgetCard(
                 keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
                 visualTransformation = ThousandsVisualTransformation
             )
+            // How long the list, and the budget above, are for
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                SectionLabel(text = stringResource(R.string.home_period_label))
+                // Wraps on a narrow screen, so the selected period is never off the edge
+                FlowRow(
+                    modifier = Modifier.selectableGroup(),
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.xs)
+                ) {
+                    PlanningPeriod.options.forEach { days ->
+                        FilterTagChip(
+                            text = planningPeriodLabel(days),
+                            selected = state.periodDays == days,
+                            onClick = { onPeriodSelected(days) }
+                        )
+                    }
+                }
+            }
             NutriFilledButton(
                 text = stringResource(R.string.home_generate),
                 onClick = {
@@ -255,6 +282,15 @@ private fun BudgetCard(
         }
     }
 }
+
+// A month is offered as a month; anything shorter in weeks
+@Composable
+private fun planningPeriodLabel(days: Int): String =
+    if (days == PlanningPeriod.MONTH_DAYS) {
+        stringResource(R.string.period_one_month)
+    } else {
+        pluralStringResource(R.plurals.period_weeks, days / 7, days / 7)
+    }
 
 // The latest list at a glance. Tapping it opens the List tab.
 @Composable
@@ -325,6 +361,7 @@ private fun HomePreview() {
             period = DayPeriod.Evening,
             onBudgetChange = {},
             onBudgetFocusLost = {},
+            onPeriodSelected = {},
             onGenerate = {},
             onOpenProfile = {},
             onOpenList = {},

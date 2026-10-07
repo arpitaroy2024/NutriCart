@@ -19,7 +19,7 @@ import org.json.JSONArray
         CatalogItemEntity::class,
         RegionPriceEntity::class
     ],
-    version = 3,
+    version = 5,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -117,5 +117,27 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
 private fun singleValueAsJsonList(value: String?): String =
     JSONArray(listOfNotNull(value?.trim()?.takeIf { it.isNotEmpty() })).toString()
 
+// Version 4: a grocery list records the days it was planned for. Every list made before
+// this was a month's list, so existing rows become 30. Nothing else is touched.
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `grocery_lists` ADD COLUMN `periodDays` INTEGER NOT NULL DEFAULT 30")
+    }
+}
+
+// Version 5: a catalog row says how big its pack is and whether it is still offered. Every
+// existing row keeps its id, unit, weight and price: a "kg" row is a 1000 g pack, an "L" row
+// a 1000 ml pack and a "pcs" row one piece, and all of them start as offered. No row is
+// added or removed here; the catalog repository adds the smaller packs from the seed.
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `catalog_items` ADD COLUMN `packAmount` INTEGER NOT NULL DEFAULT 1000")
+        db.execSQL("ALTER TABLE `catalog_items` ADD COLUMN `packMeasure` TEXT NOT NULL DEFAULT 'Gram'")
+        db.execSQL("ALTER TABLE `catalog_items` ADD COLUMN `offered` INTEGER NOT NULL DEFAULT 1")
+        db.execSQL("UPDATE `catalog_items` SET `packMeasure` = 'Millilitre' WHERE `unit` = 'L'")
+        db.execSQL("UPDATE `catalog_items` SET `packAmount` = 1, `packMeasure` = 'Piece' WHERE `unit` = 'pcs'")
+    }
+}
+
 // Every step from the first released schema to the current one
-val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3)
+val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)

@@ -49,6 +49,7 @@ import com.example.nutricart.ui.components.NutriCard
 import com.example.nutricart.ui.components.NutriOutlinedButton
 import com.example.nutricart.ui.components.NutriSearchField
 import com.example.nutricart.ui.components.NutriTopBar
+import com.example.nutricart.ui.amountLabel
 import com.example.nutricart.ui.formatTk
 import com.example.nutricart.ui.labelRes
 import com.example.nutricart.ui.theme.Elevation
@@ -229,7 +230,7 @@ private fun CatalogRow(entry: CatalogEntry, onAdd: () -> Unit) {
                 )
                 if (inList) {
                     Text(
-                        text = stringResource(R.string.add_in_list, entry.quantityInList, entry.item.unit),
+                        text = stringResource(R.string.add_in_list, entry.item.amountLabel(entry.quantityInList)),
                         style = NutriCartTheme.typography.caption.copy(fontWeight = FontWeight.Bold),
                         color = colors.primary
                     )

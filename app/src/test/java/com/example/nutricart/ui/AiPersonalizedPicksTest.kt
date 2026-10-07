@@ -154,7 +154,7 @@ class AiPersonalizedPicksTest {
         assertTrue(prompt.contains("never pick an item that is in flaggedItems"))
         // Candidates carry no price, no per-item nutrition figure and no catalog id
         val item = JSONObject(prompt.substringAfter("Context (JSON):\n")).getJSONArray("items").getJSONObject(0)
-        assertEquals(setOf("name", "category", "quantity", "unit", "mainNutrient"), item.keys().asSequence().toSet())
+        assertEquals(setOf("name", "category", "quantity", "unit", "mainNutrient", "amount"), item.keys().asSequence().toSet())
         listOf("arpita", "secret123", "Rangpur", "unitPrice", "caloriesPer100g").forEach {
             assertFalse(prompt.contains(it, ignoreCase = true))
         }

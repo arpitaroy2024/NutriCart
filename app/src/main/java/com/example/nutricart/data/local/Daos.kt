@@ -2,6 +2,7 @@ package com.example.nutricart.data.local
 
 import androidx.room.Dao
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Upsert
@@ -213,8 +214,32 @@ interface CatalogDao {
         insertPrices(prices)
     }
 
+    @Query("SELECT id FROM catalog_items")
+    suspend fun itemIds(): List<Long>
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertMissingItems(items: List<CatalogItemEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertMissingPrices(prices: List<RegionPriceEntity>)
+
+    @Query("UPDATE catalog_items SET offered = 0 WHERE id IN (:ids)")
+    suspend fun withdraw(ids: List<Long>)
+
+    // Brings a catalog that already holds rows up to the seed: adds the packs it lacks and
+    // withdraws the ones they replace. A row that is already there is never rewritten.
+    @Transaction
+    suspend fun topUp(items: List<CatalogItemEntity>, prices: List<RegionPriceEntity>, withdrawn: List<Long>) {
+        insertMissingItems(items)
+        insertMissingPrices(prices)
+        if (withdrawn.isNotEmpty()) withdraw(withdrawn)
+    }
+
     @Query("SELECT * FROM catalog_items ORDER BY name")
     suspend fun getAll(): List<CatalogItemEntity>
+
+    @Query("SELECT * FROM catalog_items WHERE offered = 1 ORDER BY name")
+    suspend fun getOffered(): List<CatalogItemEntity>
 
     @Query("SELECT * FROM catalog_items WHERE id = :id")
     suspend fun getById(id: Long): CatalogItemEntity?

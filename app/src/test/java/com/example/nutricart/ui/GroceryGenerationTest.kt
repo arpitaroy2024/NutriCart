@@ -238,7 +238,7 @@ class GroceryGenerationTest {
         runBlocking { env.catalog.items() }
         // A list item that points at no catalog item makes the item insert fail mid-transaction
         env.database.openHelper.writableDatabase.execSQL("PRAGMA foreign_keys = OFF")
-        env.database.openHelper.writableDatabase.execSQL("DELETE FROM catalog_items WHERE id = 5")
+        env.database.openHelper.writableDatabase.execSQL("DELETE FROM catalog_items WHERE id = 105")
         env.database.openHelper.writableDatabase.execSQL("PRAGMA foreign_keys = ON")
         val stale = object : com.example.nutricart.data.repository.CatalogRepository by env.catalog {
             override suspend fun items() = DemoCatalogSeed.items
@@ -358,9 +358,9 @@ class GroceryGenerationTest {
         assertTrue(saved.none { Allergen.Eggs in it.catalog.allergens || Allergen.Soy in it.catalog.allergens })
         // For diabetes the documented rule leaves out almost pure carbohydrate (sugar, jaggery) and nothing else
         assertTrue(saved.none { it.catalog.carbsPer100g >= 90.0 })
-        assertTrue(saved.any { it.catalog.id == 1L || it.catalog.id == 2L })
-        // Twenty people: far more lentils than the 4 kg a household of four gets
-        assertTrue(saved.first { it.catalog.id == 5L }.item.quantity > 12)
+        assertTrue(saved.any { it.catalog.id == 101L || it.catalog.id == 102L })
+        // Twenty people: far more lentils than the 4 kg a household of four gets (250 g packs, id 105)
+        assertTrue(saved.first { it.catalog.id == 105L }.item.quantity > 48)
     }
 
     @Test

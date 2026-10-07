@@ -8,6 +8,7 @@ import com.example.nutricart.data.local.ItemDao
 import com.example.nutricart.data.local.ListItemEntity
 import com.example.nutricart.data.local.ListItemWithCatalog
 import com.example.nutricart.domain.ListRules
+import com.example.nutricart.domain.PlanningPeriod
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.text.SimpleDateFormat
@@ -24,8 +25,13 @@ enum class AddItemResult { Added, QuantityIncreased, ListNotFound }
 
 // The logged-in account's grocery lists and their items
 interface GroceryListRepository {
-    // Writes the list, its items and its budget row in one transaction and returns the list id
-    suspend fun createList(budget: Int, items: List<NewListItem>): Long
+    // Writes the list, its items and its budget row in one transaction and returns the list id.
+    // periodDays is the days the list is planned for; anything unusual is stored as a month.
+    suspend fun createList(
+        budget: Int,
+        items: List<NewListItem>,
+        periodDays: Int = PlanningPeriod.DEFAULT_DAYS
+    ): Long
 
     fun observeList(listId: Long): Flow<GroceryListEntity?>
 
@@ -79,11 +85,16 @@ class LocalGroceryListRepository(
     private val now: () -> Long = System::currentTimeMillis
 ) : GroceryListRepository {
 
-    override suspend fun createList(budget: Int, items: List<NewListItem>): Long {
+    override suspend fun createList(budget: Int, items: List<NewListItem>, periodDays: Int): Long {
         val accountId = settings.requireAccountId()
         val createdAt = now()
         return listDao.insertGenerated(
-            list = GroceryListEntity(accountId = accountId, budget = budget, createdAt = createdAt),
+            list = GroceryListEntity(
+                accountId = accountId,
+                budget = budget,
+                createdAt = createdAt,
+                periodDays = PlanningPeriod.normalize(periodDays)
+            ),
             items = items.map { it.toEntity(listId = 0) },
             budget = BudgetEntity(
                 accountId = accountId,

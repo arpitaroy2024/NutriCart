@@ -54,6 +54,7 @@ import com.example.nutricart.ui.components.NutriFilledButton
 import com.example.nutricart.ui.components.NutriOutlinedButton
 import com.example.nutricart.ui.components.NutriStepper
 import com.example.nutricart.ui.components.NutriTopBar
+import com.example.nutricart.ui.amountLabel
 import com.example.nutricart.ui.formatTk
 import com.example.nutricart.ui.screens.grocerylist.BudgetSummary
 import com.example.nutricart.ui.theme.Elevation
@@ -261,20 +262,17 @@ private fun EditItemCard(
             )
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
+            // The value is a number of packs, so a step is one pack; what is shown is how
+            // much that comes to: 3 packs of 100 g read "300 g", and minus makes it "200 g"
             NutriStepper(
                 value = entry.item.quantity,
                 onValueChange = { onQuantityStep(it - entry.item.quantity) },
                 min = ListRules.MIN_QUANTITY,
                 max = ListRules.MAX_QUANTITY,
+                valueText = entry.amountLabel(),
                 decreaseDescription = stringResource(R.string.cd_decrease_item, name),
                 increaseDescription = stringResource(R.string.cd_increase_item, name),
                 valueStyle = NutriCartTheme.typography.title
-            )
-            Text(
-                text = entry.catalog.unit,
-                modifier = Modifier.padding(start = Spacing.xxs),
-                style = NutriCartTheme.typography.caption,
-                color = colors.onSurfaceMuted
             )
             Spacer(modifier = Modifier.weight(1f))
             CircleIconButton(

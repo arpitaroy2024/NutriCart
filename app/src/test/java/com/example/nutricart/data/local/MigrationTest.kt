@@ -6,6 +6,7 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.example.nutricart.data.model.Allergen
 import com.example.nutricart.data.model.HealthCondition
+import com.example.nutricart.data.model.PackMeasure
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -29,7 +30,11 @@ class MigrationTest {
     private val profilesVersion2 =
         "CREATE TABLE `profiles` (`accountId` INTEGER NOT NULL, `region` TEXT NOT NULL, `householdSize` INTEGER NOT NULL, `allergies` TEXT NOT NULL, `customAllergy` TEXT, `conditions` TEXT NOT NULL, `customCondition` TEXT, PRIMARY KEY(`accountId`), FOREIGN KEY(`accountId`) REFERENCES `accounts`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )"
 
-    // The schema Room generated for the tables that have not changed since version 1
+    private val profilesVersion3 =
+        "CREATE TABLE `profiles` (`accountId` INTEGER NOT NULL, `region` TEXT NOT NULL, `householdSize` INTEGER NOT NULL, `allergies` TEXT NOT NULL, `customAllergies` TEXT NOT NULL, `conditions` TEXT NOT NULL, `customConditions` TEXT NOT NULL, PRIMARY KEY(`accountId`), FOREIGN KEY(`accountId`) REFERENCES `accounts`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )"
+
+    // The schema Room generated for the tables as they were up to version 3. grocery_lists
+    // has no periodDays here; version 4 adds it.
     private val otherTables = listOf(
         "CREATE TABLE `accounts` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `email` TEXT NOT NULL, `passwordHash` TEXT NOT NULL, `passwordSalt` TEXT NOT NULL, `createdAt` INTEGER NOT NULL)",
         "CREATE UNIQUE INDEX `index_accounts_email` ON `accounts` (`email`)",
@@ -51,7 +56,17 @@ class MigrationTest {
         file.parentFile?.mkdirs()
         SQLiteDatabase.openOrCreateDatabase(file, null).use { db ->
             otherTables.forEach(db::execSQL)
-            db.execSQL(if (version == 1) profilesVersion1 else profilesVersion2)
+            db.execSQL(
+                when (version) {
+                    1 -> profilesVersion1
+                    2 -> profilesVersion2
+                    else -> profilesVersion3
+                }
+            )
+            // Version 4 added the planning period to a list
+            if (version >= 4) {
+                db.execSQL("ALTER TABLE `grocery_lists` ADD COLUMN `periodDays` INTEGER NOT NULL DEFAULT 30")
+            }
             db.fill()
             db.version = version
         }
@@ -290,6 +305,186 @@ class MigrationTest {
 
         withCurrent { db ->
             assertNull(db.profileDao().get(1))
+        }
+    }
+
+    // Version 3 -> current: a list gains the days it was planned for
+
+    private fun SQLiteDatabase.list(id: Long, accountId: Long, budget: Int) = execSQL(
+        "INSERT INTO grocery_lists (id, accountId, budget, createdAt) VALUES (?, ?, ?, ?)",
+        arrayOf<Any>(id, accountId, budget, 1_700_000_000_000 + id)
+    )
+
+    private fun SQLiteDatabase.listWithOneItem(id: Long, accountId: Long, budget: Int) {
+        list(id, accountId, budget)
+        execSQL(
+            "INSERT OR IGNORE INTO catalog_items (id, name, category, unit, gramsPerUnit, nutrientTag, caloriesPer100g, " +
+                "proteinPer100g, carbsPer100g, fatPer100g, ironMgPer100g, allergens, flaggedConditions) " +
+                "VALUES (5, 'Lentils (Masoor)', 'Protein', 'kg', 1000, 'Protein', 353.0, 25.0, 60.0, 1.0, 7.0, '', '')"
+        )
+        execSQL(
+            "INSERT INTO list_items (listId, catalogItemId, quantity, unitPrice, bought, alertOverridden) " +
+                "VALUES (?, 5, 4, 160, 1, 0)",
+            arrayOf<Any>(id)
+        )
+        execSQL(
+            "INSERT INTO budgets (accountId, amount, month, listId, createdAt) VALUES (?, ?, '2026-09', ?, 1700000000000)",
+            arrayOf<Any>(accountId, budget, id)
+        )
+    }
+
+    private fun profileV3(db: SQLiteDatabase, accountId: Long) = db.execSQL(
+        "INSERT INTO profiles (accountId, region, householdSize, allergies, customAllergies, conditions, customConditions) " +
+            "VALUES (?, 'Rangpur Division', 4, 'Peanuts', '[\"Kiwi\"]', 'Diabetes', '[]')",
+        arrayOf<Any>(accountId)
+    )
+
+    @Test
+    fun fromVersion3_existingListsBecomeThirtyDayListsAndKeepEverything() {
+        createDatabase(3) {
+            account(1, "first@example.com")
+            account(2, "second@example.com")
+            profileV3(this, 1)
+            listWithOneItem(10, 1, 8_000)
+            listWithOneItem(11, 1, 12_000)
+            listWithOneItem(20, 2, 3_000)
+        }
+
+        withCurrent { db ->
+            assertEquals(5, db.openHelper.readableDatabase.version)
+
+            // Every list is still there, with its budget and date, and is a month's list
+            val first = db.groceryListDao().latest(1)!!
+            assertEquals(11L, first.id)
+            assertEquals(12_000, first.budget)
+            assertEquals(1_700_000_000_011, first.createdAt)
+            assertEquals(30, first.periodDays)
+            assertEquals(30, db.groceryListDao().latest(2)!!.periodDays)
+            db.openHelper.readableDatabase.query("SELECT id, periodDays FROM grocery_lists ORDER BY id").use { rows ->
+                val found = buildList { while (rows.moveToNext()) add(rows.getLong(0) to rows.getInt(1)) }
+                assertEquals(listOf(10L to 30, 11L to 30, 20L to 30), found)
+            }
+
+            // Items, budgets, the profile and the account are untouched
+            db.openHelper.readableDatabase
+                .query("SELECT listId, catalogItemId, quantity, unitPrice, bought FROM list_items ORDER BY listId").use { rows ->
+                    assertEquals(3, rows.count)
+                    rows.moveToFirst()
+                    assertEquals(listOf(10L, 5L, 4L, 160L, 1L), List(5) { rows.getLong(it) })
+                }
+            db.openHelper.readableDatabase.query("SELECT COUNT(*), SUM(amount) FROM budgets").use { rows ->
+                rows.moveToFirst()
+                assertEquals(3, rows.getInt(0))
+                assertEquals(23_000, rows.getInt(1))
+            }
+            val profile = db.profileDao().get(1)!!
+            assertEquals(setOf(Allergen.Peanuts), profile.allergies)
+            assertEquals(listOf("Kiwi"), profile.customAllergies)
+            assertEquals("hash1", db.accountDao().findByEmail("first@example.com")!!.passwordHash)
+        }
+    }
+
+    @Test
+    fun fromVersion3_anEmptyDatabaseUpgradesAndStoresANewPeriod() {
+        createDatabase(3) { account(1, "first@example.com") }
+
+        withCurrent { db ->
+            assertNull(db.groceryListDao().latest(1))
+
+            // A row written without the column gets the default; one written with it keeps it
+            db.openHelper.writableDatabase.execSQL(
+                "INSERT INTO grocery_lists (accountId, budget, createdAt) VALUES (1, 500, 1)"
+            )
+            assertEquals(30, db.groceryListDao().latest(1)!!.periodDays)
+            db.openHelper.writableDatabase.execSQL(
+                "INSERT INTO grocery_lists (accountId, budget, createdAt, periodDays) VALUES (1, 500, 2, 7)"
+            )
+            assertEquals(7, db.groceryListDao().latest(1)!!.periodDays)
+        }
+    }
+
+    // Version 4 -> current: a catalog row gains its pack size and whether it is offered
+
+    private fun SQLiteDatabase.catalogRow(id: Long, name: String, unit: String, gramsPerUnit: Int) = execSQL(
+        "INSERT INTO catalog_items (id, name, category, unit, gramsPerUnit, nutrientTag, caloriesPer100g, " +
+            "proteinPer100g, carbsPer100g, fatPer100g, ironMgPer100g, allergens, flaggedConditions) " +
+            "VALUES (?, ?, 'Protein', ?, ?, 'Protein', 100.0, 10.0, 10.0, 1.0, 1.0, 'Eggs', '')",
+        arrayOf<Any>(id, name, unit, gramsPerUnit)
+    )
+
+    @Test
+    fun fromVersion4_catalogRowsGainTheirPackSizeAndNothingElseChanges() {
+        createDatabase(4) {
+            account(1, "first@example.com")
+            profileV3(this, 1)
+            catalogRow(5, "Lentils (Masoor)", "kg", 1000)
+            catalogRow(33, "Soybean oil", "L", 920)
+            catalogRow(8, "Eggs", "pcs", 50)
+            execSQL("INSERT INTO region_prices (catalogItemId, region, price, updatedAt) VALUES (5, 'Rangpur Division', 160, NULL)")
+            execSQL("INSERT INTO grocery_lists (id, accountId, budget, createdAt, periodDays) VALUES (10, 1, 3000, 1, 7)")
+            execSQL(
+                "INSERT INTO list_items (listId, catalogItemId, quantity, unitPrice, bought, alertOverridden) " +
+                    "VALUES (10, 5, 4, 160, 0, 1), (10, 8, 30, 14, 1, 0)"
+            )
+        }
+
+        withCurrent { db ->
+            assertEquals(5, db.openHelper.readableDatabase.version)
+
+            val lentils = db.catalogDao().getById(5)!!
+            assertEquals("kg", lentils.unit)
+            assertEquals(1000, lentils.gramsPerUnit)
+            assertEquals(1000, lentils.packAmount)
+            assertEquals(PackMeasure.Gram, lentils.packMeasure)
+            assertTrue(lentils.offered)
+            assertEquals(setOf(Allergen.Eggs), lentils.allergens)
+
+            val oil = db.catalogDao().getById(33)!!
+            assertEquals(1000 to PackMeasure.Millilitre, oil.packAmount to oil.packMeasure)
+            assertEquals(920, oil.gramsPerUnit)
+
+            val eggs = db.catalogDao().getById(8)!!
+            assertEquals(1 to PackMeasure.Piece, eggs.packAmount to eggs.packMeasure)
+            assertEquals(50, eggs.gramsPerUnit)
+
+            // No row was added or removed, and the price is untouched
+            assertEquals(3, db.catalogDao().itemCount())
+            assertEquals(160, db.catalogDao().price(5, "Rangpur Division")!!.price)
+
+            // The list keeps its period, its items, their quantities and their flags
+            val list = db.groceryListDao().latest(1)!!
+            assertEquals(7, list.periodDays)
+            db.openHelper.readableDatabase
+                .query("SELECT catalogItemId, quantity, unitPrice, bought, alertOverridden FROM list_items ORDER BY catalogItemId")
+                .use { rows ->
+                    val found = buildList { while (rows.moveToNext()) add(List(5) { rows.getInt(it) }) }
+                    assertEquals(listOf(listOf(5, 4, 160, 0, 1), listOf(8, 30, 14, 1, 0)), found)
+                }
+        }
+    }
+
+    @Test
+    fun fromVersion4_anEmptyCatalogUpgrades() {
+        createDatabase(4) { account(1, "first@example.com") }
+
+        withCurrent { db ->
+            assertEquals(0, db.catalogDao().itemCount())
+            assertTrue(db.catalogDao().getOffered().isEmpty())
+        }
+    }
+
+    @Test
+    fun fromVersion1_alsoReachesTheCurrentVersion() {
+        createDatabase(1) {
+            account(1, "first@example.com")
+            profileV1(1, "Rangpur Division", 4, "Peanuts", "Diabetes")
+            list(10, 1, 8_000)
+        }
+
+        withCurrent { db ->
+            assertEquals(5, db.openHelper.readableDatabase.version)
+            assertEquals(30, db.groceryListDao().latest(1)!!.periodDays)
+            assertEquals(setOf(HealthCondition.Diabetes), db.profileDao().get(1)!!.conditions)
         }
     }
 }

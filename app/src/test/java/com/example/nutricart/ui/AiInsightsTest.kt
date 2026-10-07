@@ -131,7 +131,8 @@ class AiInsightsTest {
         val review = ProfileReview.analyze(stored(), profile)!!
         assertEquals(AiTask.ReviewGroceryPlan, request.task)
         assertEquals(4, context.householdSize)
-        assertEquals(6_000, context.monthlyBudget)
+        assertEquals(6_000, context.budget)
+        assertEquals(30, context.planningPeriodDays)
         assertEquals("BDT", context.currency)
         assertEquals(listOf("Peanuts", "Kiwi"), context.allergies)
         assertEquals(listOf("Diabetes", "Migraine"), context.healthConditions)
@@ -167,7 +168,7 @@ class AiInsightsTest {
         ).forEach { assertFalse("the prompt holds \"$it\"", prompt.contains(it, ignoreCase = true)) }
         val context = JSONObject(prompt.substringAfter("Context (JSON):\n"))
         assertEquals(
-            setOf("name", "category", "quantity", "unit", "mainNutrient"),
+            setOf("name", "category", "quantity", "unit", "mainNutrient", "amount"),
             context.getJSONArray("items").getJSONObject(0).keys().asSequence().toSet()
         )
         assertEquals(
@@ -349,7 +350,7 @@ class AiInsightsTest {
         assertEquals(storedBefore, stored())
         assertEquals(nutritionBefore, NutritionAnalyzer.analyze(stored(), 4))
         assertEquals(profileBefore, runBlocking { env.profiles.get() })
-        assertEquals(3, env.database.openHelper.readableDatabase.version)
+        assertEquals(5, env.database.openHelper.readableDatabase.version)
     }
 
     @Test

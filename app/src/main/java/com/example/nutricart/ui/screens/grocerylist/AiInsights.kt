@@ -15,6 +15,7 @@ import com.example.nutricart.domain.ai.AiResult
 import com.example.nutricart.domain.conflicts.ConflictAnalysis
 import com.example.nutricart.domain.conflicts.ItemConcern
 import com.example.nutricart.domain.nutrition.NutritionAnalyzer
+import com.example.nutricart.ui.amountLabel
 
 // The optional AI explanation of the list on screen. It is never stored, and nothing else
 // on the screen depends on it.
@@ -60,16 +61,18 @@ object AiInsightsContext {
         review: ConflictAnalysis?
     ) = AiGroceryContext(
         householdSize = profile?.householdSize ?: 0,
-        monthlyBudget = list.budget,
+        budget = list.budget,
+        planningPeriodDays = list.periodDays,
         currency = CURRENCY,
         allergies = profile?.let { p -> p.allergies.map { it.name } + p.customAllergies }.orEmpty(),
         healthConditions = profile?.let { p -> p.conditions.map { it.name } + p.customConditions }.orEmpty(),
         items = items.map {
             AiListItem(
-                it.catalog.name, it.catalog.category.name, it.item.quantity, it.catalog.unit, it.catalog.nutrientTag.name
+                it.catalog.name, it.catalog.category.name, it.item.quantity, it.catalog.unit, it.catalog.nutrientTag.name,
+                it.amountLabel()
             )
         },
-        nutrition = NutritionAnalyzer.analyze(items, profile?.householdSize ?: 0)?.let { AiNutritionSummary.from(it) },
+        nutrition = NutritionAnalyzer.analyze(items, profile?.householdSize ?: 0, list.periodDays)?.let { AiNutritionSummary.from(it) },
         listTotal = items.sumOf { it.item.quantity * it.item.unitPrice },
         flaggedItems = review?.items.orEmpty().map { conflict ->
             AiFlaggedItem(conflict.itemName, conflict.concerns.map { it.label() }, conflict.keptAnyway)

@@ -27,9 +27,9 @@ import kotlinx.coroutines.launch
 // A catalog item as offered for adding
 data class CatalogEntry(
     val item: CatalogItemEntity,
-    // Tk per unit in the profile's region; null when the catalog has no price there
+    // Tk per pack in the profile's region; null when the catalog has no price there
     val price: Int?,
-    // How much of it the list already holds; 0 when it is not on the list
+    // How many packs of it the list already holds; 0 when it is not on the list
     val quantityInList: Int
 ) {
     val canAdd: Boolean get() = price != null && quantityInList < ListRules.MAX_QUANTITY
@@ -92,13 +92,18 @@ class AddItemsViewModel(
                     }
                     .collect { (list, listItems) ->
                         val inList = listItems.associate { it.item.catalogItemId to it.item.quantity }
+                        // The packs offered now. A list from before the smaller packs may hold
+                        // a withdrawn one: that pack is shown, so more of it can be added, and
+                        // the pack that replaced it is left out so the food is not listed twice.
+                        val heldWithdrawn = items.filter { !it.offered && it.id in inList }.map { it.name }.toSet()
+                        val shown = items.filter { if (it.offered) it.name !in heldWithdrawn else it.id in inList }
                         _state.update { state ->
                             state.copy(
                                 loading = false,
                                 list = list,
                                 region = region,
                                 total = listItems.sumOf { it.item.quantity * it.item.unitPrice },
-                                entries = items.map { CatalogEntry(it, prices[it.id]?.price?.takeIf { p -> p > 0 }, inList[it.id] ?: 0) }
+                                entries = shown.map { CatalogEntry(it, prices[it.id]?.price?.takeIf { p -> p > 0 }, inList[it.id] ?: 0) }
                             )
                         }
                     }

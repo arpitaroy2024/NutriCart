@@ -11,6 +11,7 @@ import com.example.nutricart.domain.GenerationFailure
 import com.example.nutricart.domain.GenerationRequest
 import com.example.nutricart.domain.GenerationResult
 import com.example.nutricart.domain.GroceryGenerator
+import com.example.nutricart.domain.PlanningPeriod
 import com.example.nutricart.domain.conflicts.AllergyMatcher
 import com.example.nutricart.navigation.Routes
 import kotlinx.coroutines.CancellationException
@@ -68,6 +69,9 @@ class GenerateViewModel(
 
     private val budget: Int = savedState[Routes.ARG_BUDGET] ?: 0
 
+    // The days the list is for; a month when the route does not say
+    private val periodDays: Int = PlanningPeriod.normalize(savedState[Routes.ARG_DAYS])
+
     private val _state = MutableStateFlow(GenerateUiState(budget = budget))
     val state: StateFlow<GenerateUiState> = _state.asStateFlow()
 
@@ -121,7 +125,8 @@ class GenerateViewModel(
                     // Listed allergies plus typed ones the alias table recognises, as in
                     // the profile review. A typed allergy it does not know leaves nothing out.
                     allergies = AllergyMatcher.resolve(profile.allergies, profile.customAllergies).allergens.keys,
-                    conditions = profile.conditions
+                    conditions = profile.conditions,
+                    days = periodDays
                 )
             )
         }
@@ -133,7 +138,11 @@ class GenerateViewModel(
                 currentCoroutineContext().ensureActive()
                 _state.update { it.copy(saving = true) }
                 val listId = withContext(NonCancellable) {
-                    lists.createList(budget, result.items.map { NewListItem(it.catalogItemId, it.quantity, it.unitPrice) })
+                    lists.createList(
+                        budget,
+                        result.items.map { NewListItem(it.catalogItemId, it.quantity, it.unitPrice) },
+                        periodDays
+                    )
                 }
                 _state.update { it.copy(saving = false, listId = listId) }
             }

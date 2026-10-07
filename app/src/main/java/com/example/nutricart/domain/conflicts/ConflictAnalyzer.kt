@@ -56,7 +56,9 @@ object AlternativeFinder {
                     unit = it.unit,
                     unitPrice = prices.getValue(it.id),
                     quantity = (grams / it.gramsPerUnit).roundToInt()
-                        .coerceIn(ListRules.MIN_QUANTITY, ListRules.MAX_QUANTITY)
+                        .coerceIn(ListRules.MIN_QUANTITY, ListRules.MAX_QUANTITY),
+                    packAmount = it.packAmount,
+                    packMeasure = it.packMeasure
                 )
             }
             .toList()

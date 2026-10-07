@@ -29,6 +29,10 @@ class ConflictEngineTest {
 
     private val analyzer = ConflictAnalyzer()
     private val seed = DemoCatalogSeed.items.associateBy { it.id }
+
+    // The forty original rows, each a kilo, a litre or a piece. The alternatives tests choose
+    // among these, so what they expect does not depend on which pack sizes are offered.
+    private val originals = DemoCatalogSeed.items.filter { it.id < DemoCatalogSeed.PACK_ID_OFFSET }
     private val rangpur = DemoCatalogSeed.prices.filter { it.region == "Rangpur Division" }.associate { it.catalogItemId to it.price }
     private var nextId = 1000L
 
@@ -75,7 +79,7 @@ class ConflictEngineTest {
         withCatalog: Boolean = false
     ) = analyzer.analyze(
         entries, profile, NutritionAnalyzer.analyze(entries, household),
-        catalog = if (withCatalog) DemoCatalogSeed.items else emptyList(),
+        catalog = if (withCatalog) originals else emptyList(),
         prices = if (withCatalog) rangpur else emptyMap()
     )
 
@@ -561,14 +565,14 @@ class ConflictEngineTest {
         val entries = seeded(17L to 2)
         val peanuts = profile(allergies = setOf(Allergen.Peanuts))
 
-        val withoutMung = analyzer.analyze(entries, peanuts, null, DemoCatalogSeed.items, rangpur - 6L)
+        val withoutMung = analyzer.analyze(entries, peanuts, null, originals, rangpur - 6L)
         assertEquals(listOf(5L, 9L, 7L), withoutMung.items.single().alternatives.map { it.catalogItemId })
 
-        val zeroPrice = analyzer.analyze(entries, peanuts, null, DemoCatalogSeed.items, rangpur + (6L to 0))
+        val zeroPrice = analyzer.analyze(entries, peanuts, null, originals, rangpur + (6L to 0))
         assertFalse(6L in zeroPrice.items.single().alternatives.map { it.catalogItemId })
 
         // No prices at all, or no catalog: the conflict is still reported, with no alternative
-        val noPrices = analyzer.analyze(entries, peanuts, null, DemoCatalogSeed.items, emptyMap())
+        val noPrices = analyzer.analyze(entries, peanuts, null, originals, emptyMap())
         assertTrue(noPrices.items.single().alternatives.isEmpty())
         assertTrue(analyze(entries, peanuts).items.single().alternatives.isEmpty())
     }

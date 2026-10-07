@@ -82,7 +82,7 @@ class AiFoundationTest {
 
         assertEquals(
             setOf(
-                "householdSize", "monthlyBudget", "currency", "allergies", "healthConditions", "items", "nutrition",
+                "householdSize", "budget", "planningPeriodDays", "currency", "allergies", "healthConditions", "items", "nutrition",
                 "listTotal", "flaggedItems", "listConsiderations", "notCheckedByRules"
             ),
             context.keys().asSequence().toSet()
@@ -91,7 +91,8 @@ class AiFoundationTest {
         assertTrue(context.isNull("listTotal"))
         assertEquals(0, context.getJSONArray("flaggedItems").length())
         assertEquals(4, context.getInt("householdSize"))
-        assertEquals(8000, context.getInt("monthlyBudget"))
+        assertEquals(8000, context.getInt("budget"))
+        assertEquals(30, context.getInt("planningPeriodDays"))
         assertEquals("BDT", context.getString("currency"))
         assertEquals("Peanuts", context.getJSONArray("allergies").getString(0))
         assertEquals("Prediabetes", context.getJSONArray("healthConditions").getString(0))

@@ -4,6 +4,7 @@ import com.example.nutricart.data.model.Allergen
 import com.example.nutricart.data.model.FoodCategory
 import com.example.nutricart.data.model.HealthCondition
 import com.example.nutricart.data.model.NutrientTag
+import com.example.nutricart.data.model.PackMeasure
 import com.example.nutricart.data.model.Regions
 import com.example.nutricart.domain.BasketSlot
 
@@ -43,7 +44,15 @@ object DemoCatalogSeed : CatalogSeed {
         val ironMg: Double,
         val tag: NutrientTag,
         val allergens: Set<Allergen> = emptySet(),
-        val conditions: Set<HealthCondition> = emptySet()
+        val conditions: Set<HealthCondition> = emptySet(),
+        // The pack's size in its own measure. The rows written out below are a kilo, a litre
+        // or one piece, which is what their unit says.
+        val packAmount: Int = if (unit == "pcs") 1 else 1000,
+        val packMeasure: PackMeasure = when (unit) {
+            "pcs" -> PackMeasure.Piece
+            "L" -> PackMeasure.Millilitre
+            else -> PackMeasure.Gram
+        }
     )
 
     private const val KG = 1000
@@ -126,6 +135,62 @@ object DemoCatalogSeed : CatalogSeed {
             allergens = setOf(Allergen.Peanuts), conditions = setOf(HealthCondition.Hypertension))
     )
 
+    /*
+     * DEMO DATA. A smaller pack for each product that is sold by the kilo or the litre above,
+     * so a short list for a small household is not forced to a whole kilo of everything.
+     * Original id to pack size, in grams (millilitres for the "L" rows). The sizes are the
+     * ones such goods are commonly weighed out or packed in; the prices are not market prices.
+     *
+     * Each becomes a row of its own with id = original + PACK_ID_OFFSET. The original row is
+     * kept exactly as it is, so lists that hold it still work, and is no longer offered.
+     * Eggs and bananas are sold by the piece already and have no smaller pack.
+     */
+    const val PACK_ID_OFFSET = 100L
+
+    val smallerPacks: Map<Long, Int> = mapOf(
+        // Grains: half-kilo bags; oats in a small pack
+        1L to 500, 2L to 500, 3L to 500, 4L to 250,
+        // Pulses and peanuts
+        5L to 250, 6L to 250, 7L to 250, 17L to 250,
+        // Meat and fish, weighed out; dried fish in a small packet
+        9L to 250, 10L to 250, 11L to 250, 12L to 250, 13L to 250, 14L to 250, 15L to 100, 16L to 250,
+        // Vegetables, weighed out; the bulky ones by the half kilo
+        18L to 250, 19L to 250, 20L to 500, 21L to 250, 22L to 250, 23L to 250,
+        24L to 500, 25L to 500, 26L to 500, 27L to 250,
+        // Fruit
+        29L to 250, 30L to 500,
+        // Dairy: half-litre milk, a small tub of yogurt
+        31L to 500, 32L to 250,
+        // Oils: half-litre bottles; mustard and peanut oil in quarter litres
+        33L to 500, 34L to 250, 35L to 250, 36L to 500, 37L to 500,
+        // Pantry
+        38L to 500, 39L to 250, 40L to 250
+    )
+
+    // The pack that replaced an original row, or the row itself when it has none
+    fun offeredId(originalId: Long): Long =
+        if (originalId in smallerPacks) originalId + PACK_ID_OFFSET else originalId
+
+    // A smaller pack of an original row: the same food, a share of its weight, and a
+    // whole-taka price rounded up from the same share of its price
+    private fun Row.pack(size: Int): Row {
+        val litres = unit == "L"
+        return Row(
+            id = id + PACK_ID_OFFSET,
+            name = name,
+            category = category,
+            unit = if (litres) "$size ml" else "$size g",
+            gramsPerUnit = (gramsPerUnit.toLong() * size / 1000).toInt(),
+            basePrice = ((basePrice.toLong() * size + 999) / 1000).toInt(),
+            kcal = kcal, protein = protein, carbs = carbs, fat = fat, ironMg = ironMg,
+            tag = tag, allergens = allergens, conditions = conditions,
+            packAmount = size,
+            packMeasure = if (litres) PackMeasure.Millilitre else PackMeasure.Gram
+        )
+    }
+
+    private val allRows: List<Row> = rows + rows.mapNotNull { row -> smallerPacks[row.id]?.let { row.pack(it) } }
+
     // Made-up percentage of the Rangpur figure, so regions differ in the demo
     private val regionPercent = mapOf(
         "Barishal Division" to 102,
@@ -138,7 +203,7 @@ object DemoCatalogSeed : CatalogSeed {
         "Sylhet Division" to 105
     )
 
-    override val items: List<CatalogItemEntity> = rows.map {
+    override val items: List<CatalogItemEntity> = allRows.map {
         CatalogItemEntity(
             id = it.id,
             name = it.name,
@@ -152,11 +217,15 @@ object DemoCatalogSeed : CatalogSeed {
             fatPer100g = it.fat,
             ironMgPer100g = it.ironMg,
             allergens = it.allergens,
-            flaggedConditions = it.conditions
+            flaggedConditions = it.conditions,
+            packAmount = it.packAmount,
+            packMeasure = it.packMeasure,
+            // An original row that has a smaller pack is kept but no longer offered
+            offered = it.id !in smallerPacks
         )
     }
 
-    override val prices: List<RegionPriceEntity> = rows.flatMap { row ->
+    override val prices: List<RegionPriceEntity> = allRows.flatMap { row ->
         Regions.all.map { region ->
             RegionPriceEntity(
                 catalogItemId = row.id,
@@ -168,47 +237,59 @@ object DemoCatalogSeed : CatalogSeed {
     }
 
     /*
-     * DEMO DATA, like the prices above: per-person monthly quantities chosen so the lists look
-     * sensible, not taken from a dietary guideline. The numbers are catalog item ids.
+     * DEMO DATA, like the prices above: per-person monthly amounts chosen so the lists look
+     * sensible, not taken from a dietary guideline.
+     *
+     * Each amount is what a person needs in a month, in grams (millilitres for milk and oil,
+     * pieces for eggs and bananas): the same amounts as before, when they were written as
+     * kilos and litres. The products are named by their original catalog ids and each slot
+     * is filled from the pack now offered for them.
      */
+    private fun slot(priority: Int, vararg products: Long, amount: Double, upgrade: Long? = null) = BasketSlot(
+        priority = priority,
+        itemIds = products.map { offeredId(it) },
+        amountPerPerson = amount,
+        upgradeItemId = upgrade?.let { offeredId(it) }
+    )
+
     override val basket: List<BasketSlot> = listOf(
         // Core staples: a grain, pulses, eggs and the two everyday vegetables
-        BasketSlot(1, listOf(2, 1), perPerson = 6.0, upgradeItemId = 1),
-        BasketSlot(1, listOf(5, 6), perPerson = 1.0),
-        BasketSlot(1, listOf(8), perPerson = 12.0),
-        BasketSlot(1, listOf(20), perPerson = 2.0),
-        BasketSlot(1, listOf(21), perPerson = 1.0),
+        slot(1, 2, 1, amount = 6000.0, upgrade = 1),
+        slot(1, 5, 6, amount = 1000.0),
+        slot(1, 8, amount = 12.0),
+        slot(1, 20, amount = 2000.0),
+        slot(1, 21, amount = 1000.0),
 
         // Everyday items
-        BasketSlot(2, listOf(33, 34, 36, 37, 35), perPerson = 0.75),
-        BasketSlot(2, listOf(11, 13), perPerson = 1.0),
-        BasketSlot(2, listOf(9), perPerson = 1.0),
-        BasketSlot(2, listOf(3), perPerson = 1.5),
-        BasketSlot(2, listOf(22), perPerson = 1.0),
-        BasketSlot(2, listOf(18, 19), perPerson = 1.0),
-        BasketSlot(2, listOf(31), perPerson = 4.0),
+        slot(2, 33, 34, 36, 37, 35, amount = 750.0),
+        slot(2, 11, 13, amount = 1000.0),
+        slot(2, 9, amount = 1000.0),
+        slot(2, 3, amount = 1500.0),
+        slot(2, 22, amount = 1000.0),
+        slot(2, 18, 19, amount = 1000.0),
+        slot(2, 31, amount = 4000.0),
 
         // Variety
-        BasketSlot(3, listOf(7), perPerson = 0.5),
-        BasketSlot(3, listOf(23), perPerson = 0.75),
-        BasketSlot(3, listOf(24), perPerson = 0.75),
-        BasketSlot(3, listOf(25), perPerson = 0.75),
-        BasketSlot(3, listOf(26), perPerson = 0.75),
-        BasketSlot(3, listOf(27), perPerson = 0.5),
-        BasketSlot(3, listOf(28), perPerson = 12.0),
-        BasketSlot(3, listOf(30), perPerson = 1.0),
-        BasketSlot(3, listOf(29), perPerson = 0.5),
-        BasketSlot(3, listOf(32), perPerson = 0.5),
-        BasketSlot(3, listOf(38), perPerson = 0.4),
+        slot(3, 7, amount = 500.0),
+        slot(3, 23, amount = 750.0),
+        slot(3, 24, amount = 750.0),
+        slot(3, 25, amount = 750.0),
+        slot(3, 26, amount = 750.0),
+        slot(3, 27, amount = 500.0),
+        slot(3, 28, amount = 12.0),
+        slot(3, 30, amount = 1000.0),
+        slot(3, 29, amount = 500.0),
+        slot(3, 32, amount = 500.0),
+        slot(3, 38, amount = 400.0),
 
         // Extras, bought only when everything above is covered in full
-        BasketSlot(4, listOf(16), perPerson = 0.25),
-        BasketSlot(4, listOf(17), perPerson = 0.25),
-        BasketSlot(4, listOf(4), perPerson = 0.25),
-        BasketSlot(4, listOf(6), perPerson = 0.25),
-        BasketSlot(4, listOf(19), perPerson = 0.5),
-        BasketSlot(4, listOf(10), perPerson = 0.25),
-        BasketSlot(4, listOf(14), perPerson = 0.25),
-        BasketSlot(4, listOf(12), perPerson = 0.25)
+        slot(4, 16, amount = 250.0),
+        slot(4, 17, amount = 250.0),
+        slot(4, 4, amount = 250.0),
+        slot(4, 6, amount = 250.0),
+        slot(4, 19, amount = 500.0),
+        slot(4, 10, amount = 250.0),
+        slot(4, 14, amount = 250.0),
+        slot(4, 12, amount = 250.0)
     )
 }

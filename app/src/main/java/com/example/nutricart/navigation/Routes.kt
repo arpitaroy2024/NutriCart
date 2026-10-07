@@ -1,5 +1,7 @@
 package com.example.nutricart.navigation
 
+import com.example.nutricart.domain.PlanningPeriod
+
 // Route strings from the UI Flow document. LOGIN and REGISTER are not in the PDFs.
 object Routes {
     const val SPLASH = "splash"
@@ -8,7 +10,7 @@ object Routes {
     const val REGISTER = "register"
     const val PROFILE_SETUP = "profile/setup?mode={mode}"
     const val HOME = "home"
-    const val GENERATE = "generate?budget={amount}"
+    const val GENERATE = "generate?budget={amount}&days={days}"
     const val LIST = "list"
     const val LIST_DETAIL = "list/{listId}"
     const val LIST_EDIT = "list/{listId}/edit"
@@ -23,6 +25,7 @@ object Routes {
     const val ARG_STORAGE_ERROR = "storageError"
     const val ARG_MODE = "mode"
     const val ARG_BUDGET = "amount"
+    const val ARG_DAYS = "days"
     const val ARG_LIST_ID = "listId"
     const val MODE_EDIT = "edit"
 
@@ -31,7 +34,8 @@ object Routes {
 
     fun profileSetup(edit: Boolean = false) = if (edit) "profile/setup?mode=$MODE_EDIT" else "profile/setup"
 
-    fun generate(budget: Int) = "generate?budget=$budget"
+    // days is the planning period; a month when it is left out
+    fun generate(budget: Int, days: Int = PlanningPeriod.DEFAULT_DAYS) = "generate?budget=$budget&days=$days"
 
     fun listDetail(listId: Long) = "list/$listId"
 
