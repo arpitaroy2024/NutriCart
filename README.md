@@ -2,9 +2,9 @@
 
 > **A smart, offline-first grocery planning and nutrition companion built with Kotlin and Jetpack Compose.**
 
-NutriCart helps users build personalized grocery lists based on their **household size, budget, region, allergies, and health conditions**, then edit those lists and analyze their nutritional balance.
+NutriCart helps users build personalized grocery lists based on their **household size, budget, region, planning period, allergies, and health conditions**, then edit those lists and analyze their nutritional balance.
 
-The application is designed as a **fully local/offline Android app**, with no backend, Firebase, or network dependency.
+Every core flow runs **locally on the device**: accounts, profiles, list generation, editing, nutrition analysis and the allergy and health-condition review need no backend and no network. The one exception is **optional AI insights** on the grocery list, sent through Firebase AI Logic (Gemini) only when the user taps the button.
 
 ---
 
@@ -12,12 +12,15 @@ The application is designed as a **fully local/offline Android app**, with no ba
 
 * 🛒 **Personalized grocery generation**
 * 💰 **Budget-aware shopping lists**
+* 📅 **Planning periods of 7, 14, 21 or 30 days**
+* 📦 **Realistic pack-based quantities** (whole packs, with smaller pack sizes)
 * 👨‍👩‍👧‍👦 **Household-size personalization**
-* 🌍 **Region-aware pricing**
+* 🌍 **Region-aware pricing** across the 8 divisions of Bangladesh
 * ✏️ **Fully editable grocery lists**
 * 📊 **Nutrition analysis and scoring**
 * ⚠️ **Allergy conflict detection**
 * 🩺 **Conservative health-condition analysis**
+* 🤖 **Optional AI insights and picks** (Gemini via Firebase AI Logic, validated and advisory only)
 * 🔄 **Real-time list updates**
 * 🔐 **Local account isolation**
 * 📱 **Offline-first architecture**
@@ -36,7 +39,7 @@ Complete Profile
       ↓
 Set Region, Household, Allergies & Health Conditions
       ↓
-Set Grocery Budget
+Set Grocery Budget & Planning Period
       ↓
 Generate Personalized Grocery List
       ↓
@@ -45,6 +48,8 @@ Edit Quantities / Add / Remove / Mark Items
 Analyze Nutrition
       ↓
 Review Allergy & Health-Condition Conflicts
+      ↓
+(Optional) Ask for AI Insights
 ```
 
 The application keeps grocery data, profile information, authentication data, and analysis state locally on the device.
@@ -59,13 +64,18 @@ NutriCart generates a deterministic grocery basket using:
 
 * Household size
 * Grocery budget
+* Planning period (7, 14, 21 or 30 days)
 * Selected region
 * Available catalog items
 * Regional prices
-* Profile allergies
+* Profile allergies (listed ones, plus typed ones with a documented mapping)
 * Supported health-condition rules
 
 The generator prioritizes essential food coverage before optional variety and never intentionally generates a basket above the selected budget.
+
+The basket template is a monthly amount per person. It is scaled to the planning period as a physical amount (grams, millilitres or pieces) and only then rounded up to **whole purchasable packs**, so a list never asks for "0.37 kg of lentils". Most products come in a smaller pack (for example 250 g or 500 ml) as well as the full kilo or litre.
+
+The catalog holds **40 products in 7 food categories, available as 78 packs**, priced for **8 regions** (the divisions of Bangladesh). Prices and nutrition values are demo data.
 
 ---
 
@@ -158,21 +168,35 @@ This conservative approach avoids inventing medical recommendations.
 
 ---
 
+### 🤖 Optional AI Insights & Picks
+
+On the grocery list screen, the user can ask for **AI insights**: a short advisory summary of the list, plus "AI picks from your list" with prioritized items and trade-offs. It is powered by Gemini through **Firebase AI Logic**, protected by **Firebase App Check** (debug provider in debug builds, Play Integrity in release builds).
+
+The AI layer is deliberately kept on a short leash:
+
+* A request is sent **only when the user taps the button**; nothing touches Firebase at app start.
+* The model receives a **sanitized context**: no name, email, account ids, region or unit prices.
+* Every answer is **validated against a JSON schema** before it is shown; a malformed answer becomes a friendly error with *Try again*.
+* A pick is shown only if it names an item that was actually sent, and never if the allergy/health review flags that item.
+* The AI **never adds, removes, reorders or re-quantifies** list items, and is never the source of truth for prices, allergens, nutrition figures or medical facts.
+* Answers live in UI state only: they are never stored and are dropped when the list or profile changes.
+* No API key is shipped in the app. Without `google-services.json` the app still builds and runs, and the feature reports that it is not configured.
+
+---
+
 ## 🔐 Privacy & Offline-First Design
 
-NutriCart does not require:
+All core features work without:
 
-* Firebase
 * A remote backend
 * Cloud authentication
 * Internet access
-* External API calls
 
-Authentication is handled locally.
+Authentication is handled locally. Passwords are not stored as plaintext: NutriCart stores only salted **PBKDF2** hashes.
 
-Passwords are not stored as plaintext. NutriCart uses salted password hashing for local authentication.
+User data is isolated by account at the repository/database layer: repositories read the account from the session and never accept an account id from the caller.
 
-User data is isolated by account at the repository/database layer.
+The only network use is the optional, user-triggered AI insights described above.
 
 ---
 
@@ -217,15 +241,22 @@ NutriCart follows a layered architecture designed to keep UI, business logic, an
 └───────────────────────────────┘
 ```
 
-Business logic such as grocery generation and nutrition analysis is kept independent from the Compose UI wherever practical.
+Key choices:
 
-This also makes the project easier to test and extend.
+* **MVVM**: each screen is a stateful wrapper plus a stateless, previewable composable; each ViewModel exposes a single `StateFlow` of UI state.
+* **Manual dependency injection** through an `AppContainer` (no Hilt), with one ViewModel factory.
+* **Navigation Compose** with a bottom-navigation shell around the four tab roots.
+* **Pure Kotlin domain layer**: the grocery generator, nutrition engine (calculator → scorer → insights) and conflict analyzer contain no Android, database or UI code, so they are deterministic and easy to unit-test.
+* **Nothing derived is stored**: nutrition and the profile review are recomputed from the current list and profile, so edits show immediately.
+* **Room with explicit migrations** (schema version 5, every step tested; no destructive fallback).
+* **Token-based design system**: colours, typography, spacing, shapes and motion come from theme tokens, and screens are built from a shared component library. Charts such as the nutrition progress ring are custom Compose drawing, with no chart library.
+* **Architecture rules enforced by tests**: tests fail if code outside the allowed packages imports the AI layer, and if user-facing text makes "safe/unsafe" or medical claims.
 
 ---
 
 ## 🧠 Rule-Based Intelligence
 
-NutriCart intentionally uses **deterministic, explainable rules** rather than an external AI/LLM service.
+Grocery generation, nutrition scoring and the allergy/health review use **deterministic, explainable rules** that run on the device, not an AI model. The optional AI insights sit *above* these rules and cannot change their results.
 
 For example:
 
@@ -258,8 +289,11 @@ When reliable data is unavailable, NutriCart avoids making a condition-specific 
 | **Kotlin**          | Primary programming language                |
 | **Jetpack Compose** | Declarative UI                              |
 | **Material 3**      | UI components and design system             |
+| **Navigation Compose** | Screen navigation and bottom-bar shell   |
 | **Room**            | Local relational database                   |
 | **DataStore**       | Lightweight local preferences/session state |
+| **Firebase AI Logic** | Optional Gemini-powered list insights     |
+| **Firebase App Check** | Protects the AI endpoint (Play Integrity) |
 | **KSP**             | Kotlin code generation                      |
 | **Gradle**          | Build system                                |
 | **JUnit**           | Unit testing                                |
@@ -305,7 +339,13 @@ NutriCart/
 │   ├── phase_5_grocery_generation.md
 │   ├── phase_6_grocery_editing.md
 │   ├── phase_7_nutrition.md
-│   └── phase_8_allergy_health.md
+│   ├── phase_8_allergy_health.md
+│   ├── phase_9_ai_foundation.md
+│   ├── phase_9b_firebase_ai_logic.md
+│   ├── phase_10_ai_insights.md
+│   ├── phase_11_ai_personalized_picks.md
+│   ├── phase_12_planning_period.md
+│   └── phase_13_pack_quantities.md
 │
 ├── CLAUDE.md
 ├── README.md
@@ -333,16 +373,20 @@ NutriCart has an automated test suite covering:
 * Allergy matching
 * Health-condition rules
 * Conflict consistency
+* Planning periods and pack quantities
+* AI response validation, context sanitization and pick gating
+* Architecture rules (package dependencies, forbidden wording)
 * Navigation
 * Empty states
+
+Tests run on the JVM with **Robolectric**, a real in-memory **Room** database and the **Compose UI test** rule, including a navigation test that drives the real nav graph and screens.
 
 ### Latest verification
 
 ```text
-Tests:        377
+Tests:        494
 Failures:     0
-Skipped:      0
-Lint errors:  0
+Skipped:      1   (opt-in live Gemini check, runs only when enabled)
 ```
 
 The project was also manually tested on a physical Android device.
@@ -404,6 +448,11 @@ NutriCart was developed incrementally to keep functionality, persistence, testin
 | Phase 6 | Grocery list editing                      | ✅ Complete |
 | Phase 7 | Nutrition analysis                        | ✅ Complete |
 | Phase 8 | Allergy & health-condition intelligence   | ✅ Complete |
+| Phase 9 | AI reasoning foundation (Firebase AI Logic) | ✅ Complete |
+| Phase 10 | Optional AI insights on the grocery list | ✅ Complete |
+| Phase 11 | AI personalized picks                    | ✅ Complete |
+| Phase 12 | Planning periods                         | ✅ Complete |
+| Phase 13 | Realistic pack-based quantities          | ✅ Complete |
 
 ---
 
@@ -433,6 +482,7 @@ NutriCart intentionally has some limitations:
 * Custom allergy matching is limited to documented mappings.
 * Regional prices are local/demo catalog data rather than live market prices.
 * The application does not provide clinical medical advice.
+* AI insights need an internet connection and a configured Firebase project; their text is advisory only.
 * No cloud synchronization is currently implemented.
 
 These limitations are intentional where reliable data or safe domain rules are not available.
@@ -448,7 +498,7 @@ The current architecture leaves room for future improvements such as:
 * Additional validated health-condition rules
 * Improved visual design and accessibility
 * Cloud synchronization
-* More advanced recommendation systems
+* Live market prices
 
 These are **not required for the current implementation**.
 
@@ -468,6 +518,8 @@ The documentation covers:
 * List-editing behavior
 * Nutrition calculations
 * Allergy and health-condition rules
+* The AI layer and its safeguards
+* Planning periods and pack quantities
 * Testing strategy
 * Phase-by-phase implementation decisions
 ---
