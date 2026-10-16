@@ -142,6 +142,7 @@
     <string name="error_budget_min">Enter at least Tk %1$s</string>
     <string name="error_budget_max">Enter no more than Tk %1$s</string>
     <string name="home_generate">Generate grocery list</string>
+    <string name="home_generate_hint">Enter an amount to continue</string>
     <string name="home_empty_title">No grocery list yet</string>
     <string name="home_empty_message">Enter a budget above and NutriCart builds a list for your household.</string>
     <string name="home_current_list">Your current list</string>
@@ -276,7 +277,6 @@
     <string name="nutrition_amount_of_reference">%1$s of %2$s %3$s</string>
     <string name="nutrition_variety_label">Food variety</string>
     <string name="nutrition_variety_count">Food groups on the list: %1$d of %2$d</string>
-    <string name="nutrition_variety_missing">Not on the list: %1$s</string>
     <string name="nutrition_highlights_label">Highlights</string>
     <string name="insight_variety_all">All five food groups are on the list.</string>
     <string name="insight_variety_some">Food groups covered: %1$d of %2$d. Missing: %3$s.</string>
@@ -296,6 +296,7 @@
          No wording here may call anything safe or unsafe, or give medical advice. -->
     <string name="review_title">Review your list</string>
     <string name="cd_open_review">Review list</string>
+    <string name="list_action_review">Review</string>
     <string name="review_no_list_title">List not found</string>
     <string name="review_no_list_message">This list is no longer available.</string>
     <string name="review_profile_empty_title">Nothing to check against</string>
@@ -337,7 +338,7 @@
     <string name="cd_replace_with">Replace with %1$s</string>
     <string name="review_unchecked_allergies">Typed allergies with no catalog data: %1$s. They stay on your profile but cannot be matched to items.</string>
     <string name="review_unchecked_conditions">Automated analysis isn\'t available for: %1$s. The catalog has no data that supports a rule for them.</string>
-    <string name="review_unchecked_custom_conditions">Typed conditions are not analysed: %1$s.</string>
+    <string name="review_unchecked_custom_conditions">Conditions you entered yourself are not analysed yet: %1$s.</string>
     <string name="review_unchecked_rules">This list has no nutrition figures, so the list-wide checks were not run.</string>
     <plurals name="review_items_without_data">
         <item quantity="one">%1$d item has no nutrition data and was not checked against nutrition rules.</item>

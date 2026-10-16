@@ -4,8 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -31,6 +32,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
@@ -53,7 +56,6 @@ import com.example.nutricart.domain.PlanningPeriod
 import com.example.nutricart.ui.AppViewModelFactory
 import com.example.nutricart.ui.DayPeriod
 import com.example.nutricart.ui.components.EmptyState
-import com.example.nutricart.ui.components.FilterTagChip
 import com.example.nutricart.ui.components.NutriCard
 import com.example.nutricart.ui.components.NutriFilledButton
 import com.example.nutricart.ui.components.NutriTextField
@@ -64,6 +66,7 @@ import com.example.nutricart.ui.firstNameOf
 import com.example.nutricart.ui.formatTk
 import com.example.nutricart.ui.initialsOf
 import com.example.nutricart.ui.theme.NutriCartTheme
+import com.example.nutricart.ui.theme.NutriCartShapes
 import com.example.nutricart.ui.theme.Sizes
 import com.example.nutricart.ui.theme.Spacing
 
@@ -256,20 +259,7 @@ private fun BudgetCard(
             // How long the list, and the budget above, are for
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                 SectionLabel(text = stringResource(R.string.home_period_label))
-                // Wraps on a narrow screen, so the selected period is never off the edge
-                FlowRow(
-                    modifier = Modifier.selectableGroup(),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.xs)
-                ) {
-                    PlanningPeriod.options.forEach { days ->
-                        FilterTagChip(
-                            text = planningPeriodLabel(days),
-                            selected = state.periodDays == days,
-                            onClick = { onPeriodSelected(days) }
-                        )
-                    }
-                }
+                PeriodSelector(selectedDays = state.periodDays, onPeriodSelected = onPeriodSelected)
             }
             NutriFilledButton(
                 text = stringResource(R.string.home_generate),
@@ -279,6 +269,51 @@ private fun BudgetCard(
                 },
                 enabled = state.canGenerate
             )
+            // Says why the button cannot be used yet
+            if (!state.canGenerate) {
+                Text(
+                    text = stringResource(R.string.home_generate_hint),
+                    modifier = Modifier.fillMaxWidth(),
+                    style = NutriCartTheme.typography.caption,
+                    color = colors.onSurfaceMuted,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
+}
+
+// The periods as one segmented control: every option the same width on a single row, so
+// none wraps, whatever the screen width
+@Composable
+private fun PeriodSelector(selectedDays: Int, onPeriodSelected: (Int) -> Unit) {
+    val colors = NutriCartTheme.colors
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(colors.surfaceSunken, NutriCartShapes.pill)
+            .padding(Spacing.xxs)
+            .selectableGroup()
+    ) {
+        PlanningPeriod.options.forEach { days ->
+            val selected = selectedDays == days
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = Sizes.touchTarget)
+                    .clip(NutriCartShapes.pill)
+                    .background(if (selected) colors.primary else Color.Transparent)
+                    .selectable(selected = selected, role = Role.Tab, onClick = { onPeriodSelected(days) }),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = planningPeriodLabel(days),
+                    style = NutriCartTheme.typography.caption.copy(fontWeight = FontWeight.SemiBold),
+                    color = if (selected) colors.onPrimary else colors.onSurface,
+                    maxLines = 1,
+                    softWrap = false
+                )
+            }
         }
     }
 }

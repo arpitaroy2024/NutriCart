@@ -8,6 +8,7 @@ import com.example.nutricart.data.repository.GroceryListRepository
 import com.example.nutricart.data.repository.ProfileRepository
 import com.example.nutricart.domain.BudgetError
 import com.example.nutricart.domain.BudgetRules
+import com.example.nutricart.domain.ListTotals
 import com.example.nutricart.domain.PlanningPeriod
 import com.example.nutricart.domain.nutrition.NutritionAnalyzer
 import com.example.nutricart.ui.screens.alerts.ProfileReview
@@ -33,8 +34,10 @@ data class ListSummary(
     // Items the profile review flags that the user has not chosen to keep
     val reviewCount: Int = 0
 ) {
-    val usedFraction: Float get() = if (budget > 0) total.toFloat() / budget else 0f
-    val usedPercent: Int get() = if (budget > 0) (total.toLong() * 100 / budget).toInt() else 0
+    // The same figures, worked out the same way, as the list and editor show
+    private val totals: ListTotals get() = ListTotals(total, budget)
+    val usedFraction: Float get() = totals.usedFraction
+    val usedPercent: Int get() = totals.usedPercent
 }
 
 data class HomeUiState(

@@ -468,7 +468,7 @@ class AppShellNavigationTest {
         // 91,420 kcal over 4 people and 30 days
         composeRule.onNodeWithText("762 of 2,000 kcal").performScrollTo().assertExists()
         composeRule.onNodeWithText("Food groups on the list: 2 of 5").performScrollTo().assertExists()
-        composeRule.onNodeWithText("Not on the list: Veg, Fruit, Dairy").performScrollTo().assertExists()
+        composeRule.onNodeWithText("Missing: Veg, Fruit, Dairy", substring = true).performScrollTo().assertExists()
         composeRule.onNodeWithText("not medical or dietary advice", substring = true).performScrollTo().assertExists()
 
         // Edit from here: the editor opens for this list

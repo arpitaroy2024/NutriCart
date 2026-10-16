@@ -35,7 +35,7 @@ fun BudgetSummary(
             detail = pluralStringResource(R.plurals.list_item_count, itemCount, itemCount) +
                 if (boughtCount > 0) pluralStringResource(R.plurals.list_bought_suffix, boughtCount, boughtCount) else "",
             value = formatTk(totals.total),
-            valueColor = colors.onSurface
+            valueColor = colors.onAccentContainer
         )
         SummaryRow(
             label = stringResource(if (over) R.string.list_over_budget else R.string.list_remaining_budget),

@@ -39,6 +39,8 @@ import com.example.nutricart.domain.nutrition.NutritionAnalysis
 import com.example.nutricart.domain.nutrition.NutritionFacts
 import com.example.nutricart.domain.nutrition.NutritionInsight
 import com.example.nutricart.domain.nutrition.NutritionReference
+import com.example.nutricart.domain.nutrition.NutritionInsights
+import com.example.nutricart.domain.nutrition.NutritionScorer
 import com.example.nutricart.domain.nutrition.NutritionScore
 import com.example.nutricart.domain.nutrition.ScoreBand
 import com.example.nutricart.ui.AppViewModelFactory
@@ -49,6 +51,7 @@ import com.example.nutricart.ui.components.NutriCard
 import com.example.nutricart.ui.components.NutriOutlinedButton
 import com.example.nutricart.ui.components.NutriTopBar
 import com.example.nutricart.ui.components.ProgressRail
+import com.example.nutricart.ui.components.nutrientStatusColor
 import com.example.nutricart.ui.components.ProgressRing
 import com.example.nutricart.ui.components.SectionLabel
 import com.example.nutricart.ui.components.TagChip
@@ -174,8 +177,9 @@ private fun Analysis(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+            // Outside the scroll, so nothing is ever drawn under the system navigation bar
             .navigationBarsPadding()
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = Spacing.gutter, vertical = Spacing.sm),
         verticalArrangement = Arrangement.spacedBy(Spacing.md)
     ) {
@@ -357,8 +361,36 @@ private fun NutrientRow(analysis: NutritionAnalysis, nutrient: Nutrient) {
                 color = colors.onSurfaceMuted
             )
         }
-        // Capped at full width; under 60% of the reference the bar turns to the warning colour
-        ProgressRail(progress = analysis.coverageOf(nutrient).toFloat(), warnBelowTarget = true)
+        // Capped at full width; the colour says whether the nutrient is inside its reference range
+        val (value, min, max) = statusRange(analysis, nutrient)
+        ProgressRail(
+            progress = analysis.coverageOf(nutrient).toFloat(),
+            color = nutrientStatusColor(value, min, max)
+        )
+    }
+}
+
+/*
+ * The figure a nutrient's bar is judged on, with the range it should fall in. A nutrient
+ * under the gap threshold is below its range. Past that, protein, carbohydrate and fat are
+ * judged on their share of energy, which is the figure and the range the profile review
+ * uses, so the two screens cannot disagree about carbohydrate. Figures come from the
+ * analysis as it is; nothing is recalculated differently here.
+ */
+private fun statusRange(analysis: NutritionAnalysis, nutrient: Nutrient): Triple<Double, Double, Double> {
+    val coverage = analysis.coverageOf(nutrient)
+    val shares = NutritionScorer.macroShares(analysis.perPersonPerDay)
+    val share = when (nutrient) {
+        Nutrient.Protein -> shares?.protein?.let { it to NutritionReference.proteinShare }
+        Nutrient.Carbohydrate -> shares?.carbohydrate?.let { it to NutritionReference.carbohydrateShare }
+        Nutrient.Fat -> shares?.fat?.let { it to NutritionReference.fatShare }
+        else -> null
+    }
+    return if (coverage < NutritionReference.GAP_THRESHOLD || share == null) {
+        val upper = if (nutrient == Nutrient.Energy) NutritionInsights.ENERGY_ABOVE_REFERENCE_FROM else Double.MAX_VALUE
+        Triple(coverage, NutritionReference.GAP_THRESHOLD, upper)
+    } else {
+        Triple(share.first, share.second.start, share.second.endInclusive)
     }
 }
 
@@ -383,13 +415,6 @@ private fun VarietyCard(analysis: NutritionAnalysis) {
                 ) {
                     analysis.presentGroups.forEach { TagChip(text = stringResource(it.labelRes())) }
                 }
-            }
-            if (analysis.missingGroups.isNotEmpty()) {
-                Text(
-                    text = stringResource(R.string.nutrition_variety_missing, groupNames(analysis.missingGroups)),
-                    style = NutriCartTheme.typography.caption,
-                    color = colors.onSurfaceMuted
-                )
             }
         }
     }

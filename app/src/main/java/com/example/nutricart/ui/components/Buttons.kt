@@ -55,7 +55,7 @@ fun NutriFilledButton(
             contentColor = colors.onPrimary,
             // A loading button keeps its colours so the spinner stays visible
             disabledContainerColor = if (loading) colors.primary else colors.surfaceSunken,
-            disabledContentColor = if (loading) colors.onPrimary else colors.onSurfaceFaint
+            disabledContentColor = if (loading) colors.onPrimary else colors.onSurfaceMuted
         ),
         contentPadding = PaddingValues(horizontal = Spacing.md)
     ) {
@@ -66,7 +66,7 @@ fun NutriFilledButton(
                 strokeWidth = 2.dp
             )
         } else {
-            Text(text = text, style = NutriCartTheme.typography.title, maxLines = 1)
+            Text(text = text, style = NutriCartTheme.typography.button, maxLines = 1)
         }
     }
 }
@@ -82,7 +82,7 @@ fun NutriOutlinedButton(
     height: Dp = Sizes.outlinedButton,
     fillWidth: Boolean = true,
     leadingIcon: Painter? = null,
-    textStyle: TextStyle = NutriCartTheme.typography.title
+    textStyle: TextStyle = NutriCartTheme.typography.button
 ) {
     val colors = NutriCartTheme.colors
     val contentColor = if (enabled) color else colors.onSurfaceFaint
@@ -93,7 +93,7 @@ fun NutriOutlinedButton(
             .then(if (fillWidth) Modifier.fillMaxWidth() else Modifier)
             .height(height),
         shape = NutriCartShapes.pill,
-        border = BorderStroke(Sizes.focusedOutline, contentColor),
+        border = BorderStroke(Sizes.buttonOutline, contentColor),
         colors = ButtonDefaults.outlinedButtonColors(
             contentColor = color,
             disabledContentColor = colors.onSurfaceFaint

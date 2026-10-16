@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.progressSemantics
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -31,6 +32,13 @@ import com.example.nutricart.ui.theme.Motion
 import com.example.nutricart.ui.theme.NutriCartShapes
 import com.example.nutricart.ui.theme.NutriCartTheme
 import com.example.nutricart.ui.theme.Sizes
+
+// The one rule for every nutrient bar: the primary colour inside the reference range,
+// the warning colour below or above it
+@Composable
+@ReadOnlyComposable
+fun nutrientStatusColor(value: Double, min: Double, max: Double): Color =
+    if (value in min..max) NutriCartTheme.colors.primary else NutriCartTheme.colors.warning
 
 // C-11 Progress rail. progress is 0..1 and is capped at full width.
 // warnBelowTarget switches the bar to the warning token under 60%.

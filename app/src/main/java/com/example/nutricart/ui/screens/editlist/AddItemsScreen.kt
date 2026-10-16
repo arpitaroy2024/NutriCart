@@ -51,6 +51,8 @@ import com.example.nutricart.ui.components.NutriSearchField
 import com.example.nutricart.ui.components.NutriTopBar
 import com.example.nutricart.ui.amountLabel
 import com.example.nutricart.ui.formatTk
+import com.example.nutricart.ui.normalizedPrice
+import com.example.nutricart.ui.normalizedUnit
 import com.example.nutricart.ui.labelRes
 import com.example.nutricart.ui.theme.Elevation
 import com.example.nutricart.ui.theme.NutriCartTheme
@@ -180,7 +182,7 @@ private fun Picker(
             } else {
                 LazyColumn(
                     state = listState,
-                    contentPadding = PaddingValues(start = Spacing.gutter, end = Spacing.gutter, bottom = Spacing.md),
+                    contentPadding = PaddingValues(start = Spacing.gutter, end = Spacing.gutter, bottom = Spacing.xl),
                     verticalArrangement = Arrangement.spacedBy(Spacing.sm)
                 ) {
                     items(visible, key = { it.item.id }) { entry ->
@@ -220,7 +222,11 @@ private fun CatalogRow(entry: CatalogEntry, onAdd: () -> Unit) {
                         stringResource(
                             R.string.add_category_and_price,
                             stringResource(entry.item.category.labelRes()),
-                            stringResource(R.string.price_per_unit, formatTk(entry.price), entry.item.unit)
+                            stringResource(
+                                R.string.price_per_unit,
+                                formatTk(entry.item.normalizedPrice(entry.price)),
+                                entry.item.normalizedUnit()
+                            )
                         )
                     } else {
                         stringResource(R.string.add_price_unavailable)

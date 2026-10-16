@@ -56,6 +56,8 @@ import com.example.nutricart.ui.components.NutriStepper
 import com.example.nutricart.ui.components.NutriTopBar
 import com.example.nutricart.ui.amountLabel
 import com.example.nutricart.ui.formatTk
+import com.example.nutricart.ui.normalizedPrice
+import com.example.nutricart.ui.normalizedUnit
 import com.example.nutricart.ui.screens.grocerylist.BudgetSummary
 import com.example.nutricart.ui.theme.Elevation
 import com.example.nutricart.ui.theme.NutriCartShapes
@@ -207,7 +209,13 @@ private fun EditListContent(
                     }
                 )
                 else -> LazyColumn(
-                    contentPadding = PaddingValues(horizontal = Spacing.gutter, vertical = Spacing.sm),
+                    // Room under the last item, so it sits clear of the docked summary
+                    contentPadding = PaddingValues(
+                        start = Spacing.gutter,
+                        end = Spacing.gutter,
+                        top = Spacing.sm,
+                        bottom = Spacing.xl
+                    ),
                     verticalArrangement = Arrangement.spacedBy(Spacing.sm)
                 ) {
                     items(state.items, key = { it.item.id }) { entry ->
@@ -249,7 +257,11 @@ private fun EditItemCard(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = stringResource(R.string.price_per_unit, formatTk(entry.item.unitPrice), entry.catalog.unit),
+                    text = stringResource(
+                        R.string.price_per_unit,
+                        formatTk(entry.catalog.normalizedPrice(entry.item.unitPrice)),
+                        entry.catalog.normalizedUnit()
+                    ),
                     style = NutriCartTheme.typography.caption,
                     color = colors.onSurfaceMuted
                 )

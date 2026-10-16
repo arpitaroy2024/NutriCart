@@ -134,8 +134,9 @@ private fun Review(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+            // Outside the scroll, so nothing is ever drawn under the system navigation bar
             .navigationBarsPadding()
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = Spacing.gutter, vertical = Spacing.sm),
         verticalArrangement = Arrangement.spacedBy(Spacing.md)
     ) {

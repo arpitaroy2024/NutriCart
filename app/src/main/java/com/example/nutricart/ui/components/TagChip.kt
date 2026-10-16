@@ -57,7 +57,7 @@ fun TagChip(
         }
         TagTone.Condition -> {
             container = colors.warningContainer
-            content = colors.warning
+            content = colors.onWarningContainer
         }
     }
     Box(
@@ -102,7 +102,7 @@ fun FilterTagChip(
     ) {
         Text(
             text = text,
-            style = NutriCartTheme.typography.caption.copy(fontWeight = FontWeight.Bold),
+            style = NutriCartTheme.typography.caption.copy(fontWeight = FontWeight.SemiBold),
             color = if (selected) colors.onPrimary else colors.onSurface,
             maxLines = 1
         )
@@ -151,7 +151,7 @@ fun MultiSelectChip(
         }
         Text(
             text = text,
-            style = NutriCartTheme.typography.caption.copy(fontWeight = FontWeight.Bold),
+            style = NutriCartTheme.typography.caption.copy(fontWeight = FontWeight.SemiBold),
             color = content,
             maxLines = 1
         )
@@ -183,7 +183,7 @@ fun RemovableChip(
         Text(
             text = text,
             modifier = Modifier.weight(1f, fill = false),
-            style = NutriCartTheme.typography.caption.copy(fontWeight = FontWeight.Bold),
+            style = NutriCartTheme.typography.caption.copy(fontWeight = FontWeight.SemiBold),
             color = colors.onPrimary,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis

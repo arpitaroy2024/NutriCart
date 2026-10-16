@@ -20,15 +20,17 @@ object Spacing {
 }
 
 object NutriCartShapes {
-    val input = RoundedCornerShape(10.dp)
-    val card = RoundedCornerShape(14.dp)
-    val sheet = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp)
+    val input = RoundedCornerShape(14.dp)
+    val tile = RoundedCornerShape(12.dp)
+    val card = RoundedCornerShape(20.dp)
+    val sheet = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
     val pill = CircleShape
 }
 
 object Elevation {
-    val card = 0.dp
-    val dockedBar = 6.dp
+    val card = 2.dp
+    val flat = 0.dp
+    val dockedBar = 8.dp
     val dialog = 12.dp
 }
 
@@ -41,9 +43,10 @@ object Sizes {
 
     val outline = 1.dp
     val focusedOutline = 2.dp
+    val buttonOutline = 1.5.dp
 
-    val filledButton = 56.dp
-    val outlinedButton = 52.dp
+    val filledButton = 52.dp
+    val outlinedButton = 48.dp
     val input = 50.dp
     val searchField = 44.dp
     val stepperButton = 36.dp
@@ -57,6 +60,7 @@ object Sizes {
     val topBar = 56.dp
     val alertBar = 6.dp
     val alertIconCircle = 28.dp
+    val categoryTile = 40.dp
     val logo = 200.dp
     val logoRing = 4.dp
 }

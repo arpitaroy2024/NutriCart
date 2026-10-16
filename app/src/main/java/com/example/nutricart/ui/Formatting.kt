@@ -1,5 +1,6 @@
 package com.example.nutricart.ui
 
+import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import com.example.nutricart.R
 import com.example.nutricart.data.local.CatalogItemEntity
@@ -43,6 +44,26 @@ private fun scaledAmount(amount: Int, small: String, large: String): String {
 
 // How much a number of packs of this item comes to: 3 packs of 100 g is "300 g"
 fun CatalogItemEntity.amountLabel(quantity: Int): String = formatAmount(quantity * packAmount, packMeasure)
+
+/*
+ * A pack's price put on a common footing, so packs of different sizes can be compared:
+ * per kilo for weight, per litre for volume, per piece for things counted. Rounded to the
+ * nearest taka. For display only; a line total is still packs x the pack's own price.
+ */
+fun CatalogItemEntity.normalizedPrice(packPrice: Int): Int = when {
+    packAmount <= 0 -> packPrice
+    packMeasure == PackMeasure.Piece -> ((packPrice.toLong() * 2 + packAmount) / (2L * packAmount)).toInt()
+    else -> ((packPrice.toLong() * 2000 + packAmount) / (2L * packAmount)).toInt()
+}
+
+// The unit normalizedPrice is for
+fun CatalogItemEntity.normalizedUnit(): String = when {
+    packAmount <= 0 -> unit
+    packMeasure == PackMeasure.Gram -> "kg"
+    packMeasure == PackMeasure.Millilitre -> "L"
+    packAmount == 1 -> unit
+    else -> "pc"
+}
 
 // How much of the item the list holds
 fun ListItemWithCatalog.amountLabel(): String = catalog.amountLabel(item.quantity)
@@ -109,6 +130,18 @@ fun FoodCategory.labelRes(): Int = when (this) {
     FoodCategory.Dairy -> R.string.category_dairy
     FoodCategory.Oils -> R.string.category_oils
     FoodCategory.Pantry -> R.string.category_pantry
+}
+
+// The picture that stands for a category on a list row
+@DrawableRes
+fun FoodCategory.iconRes(): Int = when (this) {
+    FoodCategory.Protein -> R.drawable.ic_category_protein
+    FoodCategory.Grains -> R.drawable.ic_category_grains
+    FoodCategory.Veg -> R.drawable.ic_category_veg
+    FoodCategory.Fruit -> R.drawable.ic_category_fruit
+    FoodCategory.Dairy -> R.drawable.ic_category_dairy
+    FoodCategory.Oils -> R.drawable.ic_category_oils
+    FoodCategory.Pantry -> R.drawable.ic_category_pantry
 }
 
 @StringRes

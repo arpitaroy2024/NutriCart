@@ -45,13 +45,15 @@ fun NutriCard(
     border: BorderStroke? = BorderStroke(Sizes.outline, NutriCartTheme.colors.outline),
     leadingBarColor: Color? = null,
     contentPadding: PaddingValues = PaddingValues(Spacing.md),
+    // A soft lift off the background; tinted cards such as alerts stay flat
+    elevation: Dp = Elevation.card,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val cardColors = CardDefaults.cardColors(
         containerColor = containerColor,
         contentColor = NutriCartTheme.colors.onSurface
     )
-    val elevation = CardDefaults.cardElevation(defaultElevation = Elevation.card)
+    val cardElevation = CardDefaults.cardElevation(defaultElevation = elevation)
     val body: @Composable ColumnScope.() -> Unit = {
         if (leadingBarColor == null) {
             Column(modifier = Modifier.padding(contentPadding), content = content)
@@ -79,7 +81,7 @@ fun NutriCard(
             modifier = modifier,
             shape = shape,
             colors = cardColors,
-            elevation = elevation,
+            elevation = cardElevation,
             border = border,
             content = body
         )
@@ -88,7 +90,7 @@ fun NutriCard(
             modifier = modifier,
             shape = shape,
             colors = cardColors,
-            elevation = elevation,
+            elevation = cardElevation,
             border = border,
             content = body
         )
@@ -123,7 +125,7 @@ fun AlertCard(
         AlertTone.Warning -> {
             container = colors.warningContainer
             accent = colors.warning
-            messageColor = colors.warning
+            messageColor = colors.onWarningContainer
             iconRes = R.drawable.ic_alert
         }
         AlertTone.Positive -> {
@@ -138,7 +140,8 @@ fun AlertCard(
         modifier = modifier.fillMaxWidth(),
         containerColor = container,
         border = null,
-        leadingBarColor = if (showBar) accent else null
+        leadingBarColor = if (showBar) accent else null,
+        elevation = Elevation.flat
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -21,7 +22,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -32,12 +32,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
@@ -52,6 +55,7 @@ import com.example.nutricart.data.model.NutrientTag
 import com.example.nutricart.domain.conflicts.ItemConflict
 import com.example.nutricart.domain.conflicts.Severity
 import com.example.nutricart.ui.AppViewModelFactory
+import com.example.nutricart.ui.components.CategoryTile
 import com.example.nutricart.ui.components.EmptyState
 import com.example.nutricart.ui.components.FilterTagChip
 import com.example.nutricart.ui.components.NutriCard
@@ -70,7 +74,7 @@ import com.example.nutricart.ui.theme.NutriCartTheme
 import com.example.nutricart.ui.theme.Sizes
 import com.example.nutricart.ui.theme.Spacing
 
-private val ItemCardMinHeight = 76.dp
+private val ItemCardMinHeight = 72.dp
 private val BoughtCheckboxSize = 32.dp
 private val NutrientTagHeight = 24.dp
 private const val BoughtAlpha = 0.5f
@@ -126,20 +130,18 @@ private fun GroceryListContent(
                 actions = {
                     // The profile review and the nutrition analysis of this list
                     if (state.list != null) {
-                        IconButton(onClick = onOpenReview) {
-                            Icon(
-                                painter = painterResource(R.drawable.ic_alert),
-                                contentDescription = stringResource(R.string.cd_open_review),
-                                modifier = Modifier.size(Sizes.iconNav)
-                            )
-                        }
-                        IconButton(onClick = onOpenNutrition) {
-                            Icon(
-                                painter = painterResource(R.drawable.ic_chart),
-                                contentDescription = stringResource(R.string.cd_open_nutrition),
-                                modifier = Modifier.size(Sizes.iconNav)
-                            )
-                        }
+                        HeaderAction(
+                            icon = painterResource(R.drawable.ic_alert),
+                            label = stringResource(R.string.list_action_review),
+                            description = stringResource(R.string.cd_open_review),
+                            onClick = onOpenReview
+                        )
+                        HeaderAction(
+                            icon = painterResource(R.drawable.ic_chart),
+                            label = stringResource(R.string.nav_nutrition),
+                            description = stringResource(R.string.cd_open_nutrition),
+                            onClick = onOpenNutrition
+                        )
                     }
                 }
             )
@@ -191,6 +193,37 @@ private fun GroceryListContent(
                 )
             }
         }
+    }
+}
+
+// A header action with its name under the icon, so it does not rely on the icon alone.
+// Screen readers get the fuller description, once; the short label is for the eye.
+@Composable
+private fun HeaderAction(icon: Painter, label: String, description: String, onClick: () -> Unit) {
+    val colors = NutriCartTheme.colors
+    Column(
+        modifier = Modifier
+            .heightIn(min = Sizes.touchTarget)
+            .widthIn(min = Sizes.touchTarget)
+            .clip(NutriCartShapes.tile)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = Spacing.xs),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            painter = icon,
+            contentDescription = description,
+            modifier = Modifier.size(Sizes.iconInline),
+            tint = colors.onSurface
+        )
+        Text(
+            text = label,
+            modifier = Modifier.clearAndSetSemantics { },
+            style = NutriCartTheme.typography.micro,
+            color = colors.onSurfaceMuted,
+            maxLines = 1
+        )
     }
 }
 
@@ -247,7 +280,8 @@ private fun ListBody(
                 contentPadding = PaddingValues(
                     start = Spacing.gutter,
                     end = Spacing.gutter,
-                    bottom = Spacing.md
+                    // Room under the last item, so it sits clear of the docked summary
+                    bottom = Spacing.xl
                 ),
                 verticalArrangement = Arrangement.spacedBy(Spacing.sm)
             ) {
@@ -306,20 +340,34 @@ private fun ItemCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
             ) {
+                CategoryTile(category = entry.catalog.category)
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = entry.catalog.name,
-                        style = NutriCartTheme.typography.body.copy(fontWeight = FontWeight.Bold),
+                        style = NutriCartTheme.typography.subtitle,
                         color = colors.onSurface,
+                        textDecoration = if (bought) TextDecoration.LineThrough else null,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
-                    Text(
-                        // The total amount, whatever size of pack it is bought in
-                        text = entry.amountLabel(),
-                        style = NutriCartTheme.typography.caption,
-                        color = colors.onSurfaceMuted
-                    )
+                    // The amount, then the same category the filter chips and the tile use
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
+                    ) {
+                        Text(
+                            // The total amount, whatever size of pack it is bought in
+                            text = entry.amountLabel(),
+                            style = NutriCartTheme.typography.caption,
+                            color = colors.onSurfaceMuted
+                        )
+                        Text(
+                            text = stringResource(entry.catalog.category.labelRes()).uppercase(),
+                            style = NutriCartTheme.typography.micro,
+                            color = colors.onSurfaceFaint,
+                            maxLines = 1
+                        )
+                    }
                     // A small marker only; the explanation is on the review screen
                     if (conflict != null) {
                         val direct = conflict.severity == Severity.High
@@ -340,22 +388,12 @@ private fun ItemCard(
                         )
                     }
                 }
-                Column(
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(Spacing.xxs)
-                ) {
-                    Text(
-                        text = formatTk(entry.item.quantity * entry.item.unitPrice),
-                        style = NutriCartTheme.typography.title,
-                        color = colors.onSurface,
-                        maxLines = 1
-                    )
-                    TagChip(
-                        text = stringResource(entry.catalog.nutrientTag.labelRes()),
-                        height = NutrientTagHeight,
-                        uppercase = true
-                    )
-                }
+                Text(
+                    text = formatTk(entry.item.quantity * entry.item.unitPrice),
+                    style = NutriCartTheme.typography.subtitle,
+                    color = colors.onSurface,
+                    maxLines = 1
+                )
             }
         }
     }

@@ -15,11 +15,14 @@ data class NutriCartTypography(
     val headline: TextStyle,
     val titleLarge: TextStyle,
     val title: TextStyle,
+    // An item name or a value that should stand out from body text without shouting
+    val subtitle: TextStyle,
     val stat: TextStyle,
     val body: TextStyle,
     val caption: TextStyle,
     val label: TextStyle,
-    val micro: TextStyle
+    val micro: TextStyle,
+    val button: TextStyle
 )
 
 private fun role(size: Int, line: Int, weight: FontWeight, tracking: Double = 0.0) = TextStyle(
@@ -31,15 +34,17 @@ private fun role(size: Int, line: Int, weight: FontWeight, tracking: Double = 0.
 )
 
 val NutriCartType = NutriCartTypography(
-    display = role(32, 38, FontWeight.Bold),
-    headline = role(26, 32, FontWeight.Bold),
-    titleLarge = role(22, 28, FontWeight.Bold),
-    title = role(20, 26, FontWeight.Bold),
+    display = role(30, 36, FontWeight.Bold),
+    headline = role(24, 30, FontWeight.Bold),
+    titleLarge = role(20, 26, FontWeight.SemiBold),
+    title = role(18, 24, FontWeight.SemiBold),
+    subtitle = role(16, 22, FontWeight.SemiBold),
     stat = role(32, 36, FontWeight.Bold),
     body = role(16, 22, FontWeight.Normal),
     caption = role(14, 19, FontWeight.Normal),
-    label = role(12, 16, FontWeight.Bold, tracking = 1.5),
-    micro = role(11, 14, FontWeight.Bold)
+    label = role(12, 16, FontWeight.SemiBold, tracking = 0.8),
+    micro = role(11, 14, FontWeight.SemiBold, tracking = 0.3),
+    button = role(16, 20, FontWeight.SemiBold)
 )
 
 val LocalNutriCartTypography = staticCompositionLocalOf { NutriCartType }
@@ -52,6 +57,8 @@ val Typography = Typography(
     titleMedium = NutriCartType.title,
     bodyLarge = NutriCartType.body,
     bodyMedium = NutriCartType.caption,
+    titleSmall = NutriCartType.subtitle,
+    labelLarge = NutriCartType.button,
     labelMedium = NutriCartType.label,
     labelSmall = NutriCartType.micro
 )
